@@ -61,6 +61,7 @@ google_*.json
 *_credentials.json
 *_token.json
 
+docs/
 .cursor/
 .claude/
 .vscode/
