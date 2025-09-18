@@ -47,7 +47,7 @@ from aipype import (
     ConditionalTask,
     TaskResult,
 )
-from aipype_tl_google import GoogleOAuthTask, GmailListEmailsTask
+from aipype_g import GoogleOAuthTask, GmailListEmailsTask
 from aipype import print_header, print_message_box
 
 

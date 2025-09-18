@@ -35,7 +35,7 @@ from aipype import (
     DependencyType,
     TaskResult,
 )
-from aipype_tl_google import (
+from aipype_g import (
     GoogleAuthService,
     GoogleOAuthTask,
     GoogleSheetsService,
@@ -43,7 +43,7 @@ from aipype_tl_google import (
     SheetData,
     SpreadsheetInfo,
 )
-from aipype_tl_google.tasklib.google_auth_service import SHEETS_SCOPES
+from aipype_g.tasklib.google_auth_service import SHEETS_SCOPES
 
 
 @pytest.fixture(scope="session")

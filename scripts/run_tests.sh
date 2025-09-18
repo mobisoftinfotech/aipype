@@ -113,7 +113,7 @@ fi
 echo ""
 
 # Packages with tests (excludes aipype-examples)
-PACKAGES_WITH_TESTS=("aipype" "aipype-extras" "aipype-tl-google")
+PACKAGES_WITH_TESTS=("aipype" "aipype-extras" "aipype-g")
 
 # Build pytest arguments
 PYTEST_ARGS=()

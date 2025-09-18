@@ -1,4 +1,4 @@
-"""aipype-tl-google: Google API integrations for the aipype framework."""
+"""aipype-g: Google API integrations for the aipype framework."""
 
 __version__ = "0.1.0"
 

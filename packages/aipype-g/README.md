@@ -1,11 +1,11 @@
-# aipype-tl-google
+# aipype-g
 
 Google API integrations for the aipype framework.
 
 ## Installation
 
 ```bash
-pip install aipype-tl-google
+pip install aipype-g
 ```
 
 ## Setup

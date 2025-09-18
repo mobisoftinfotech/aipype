@@ -37,13 +37,13 @@ from aipype import (
     DependencyType,
     TaskResult,
 )
-from aipype_tl_google import (
+from aipype_g import (
     GmailListEmailsTask,
     GmailReadEmailTask,
     GoogleOAuthTask,
     GmailMessage,
 )
-from aipype_tl_google.tasklib.gmail_models import (
+from aipype_g.tasklib.gmail_models import (
     GmailSystemLabels,
     GmailSearchOperators,
 )

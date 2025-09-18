@@ -33,16 +33,16 @@ import time
 from typing import Any, List
 from datetime import datetime
 
-from aipype_tl_google import (
+from aipype_g import (
     GmailService,
     GoogleAuthService,
     GoogleOAuthTask,
     GmailMessage,
     GmailLabel,
 )
-from aipype_tl_google.tasklib.gmail_service import GmailServiceError
-from aipype_tl_google.tasklib.google_auth_service import GMAIL_SCOPES
-from aipype_tl_google.tasklib.gmail_models import (
+from aipype_g.tasklib.gmail_service import GmailServiceError
+from aipype_g.tasklib.google_auth_service import GMAIL_SCOPES
+from aipype_g.tasklib.gmail_models import (
     GmailSearchOperators,
     GmailSystemLabels,
 )
