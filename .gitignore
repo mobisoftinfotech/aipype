@@ -1,0 +1,70 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# OS generated files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Icon?
+._*
+.Spotlight-V100
+.Trashes
+desktop.ini
+
+# Archive files
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.rar
+*.7z
+*.gz
+*.bz2
+*.xz
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# Environment and configuration files
+.env
+.env.local
+.env.development
+.env.production
+.env.test
+*.env
+
+# API keys and secrets
+secrets.json
+config.local.json
+
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+output/
+
+.coverage
+temp/
+
+gmail_*.json
+sheets_*.json
+google_*.json
+*_credentials.json
+*_token.json
+
+.cursor/
+.claude/
+.vscode/
+CLAUDE.md
+
+# Publishing script (private)
+scripts/publish_to_pypi.sh

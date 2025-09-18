@@ -1,0 +1,42 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "aipype-g"
+version = "0.1.0a1"
+description = "Google API integrations for the aipype framework"
+readme = "README.md"
+requires-python = ">=3.12"
+authors = [
+    {name = "Pritam Barhate", email = "pritambarhate@mobisoftinfotech.com"},
+]
+keywords = ["ai", "agents", "google", "gmail", "sheets", "tasklib"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+dependencies = [
+    "aipype>=0.1.0a1",
+    "google-auth>=2.0.0",
+    "google-auth-oauthlib>=1.0.0",
+    "google-api-python-client>=2.0.0",
+]
+
+[dependency-groups]
+test = [
+    "pytest>=8.3.0",
+    "pytest-cov>=4.0.0",
+]
+
+[tool.pytest.ini_options]
+markers = [
+    "integration: marks tests as integration tests",
+    "sheets: marks tests requiring Google Sheets API access",
+]

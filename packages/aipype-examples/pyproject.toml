@@ -1,0 +1,48 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "aipype-examples"
+version = "0.1.0a1"
+description = "Examples and tutorials for the aipype framework"
+readme = "README.md"
+requires-python = ">=3.12"
+authors = [
+    {name = "Pritam Barhate", email = "pritambarhate@mobisoftinfotech.com"},
+]
+keywords = ["ai", "agents", "examples", "tutorials", "framework"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+# Depends on core aipype package
+dependencies = [
+    "aipype>=0.1.0a1",
+    "aipype-g>=0.1.0a1",
+]
+
+[dependency-groups]
+test = [
+    "pytest>=8.3.0",
+    "pytest-cov>=4.0.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests", "integration_tests"]
+markers = [
+    "integration: marks tests as integration tests",
+    "slow: marks tests that take significant time to run",
+]
+filterwarnings = [
+    "ignore:There is no current event loop:DeprecationWarning:litellm",
+    "ignore:Pydantic serializer warnings:UserWarning:pydantic",
+    "ignore:Use 'content=<.*>' to upload raw bytes/text content:DeprecationWarning:httpx",
+]

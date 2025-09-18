@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLM Log Viewer</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h1>LLM Call Logs</h1>
+            </div>
+            <div class="log-list" id="log-list">
+                <div class="empty-state">Loading logs...</div>
+            </div>
+            <div class="sidebar-footer">
+                <div class="pagination-controls">
+                    <button class="btn pagination-btn" id="prev-btn" onclick="goToPrevPage()">◀</button>
+                    <span class="page-info" id="page-info">1/1</span>
+                    <button class="btn pagination-btn" id="next-btn" onclick="goToNextPage()">▶</button>
+                    <span class="log-count" id="log-count">(0 of 0)</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="content-panel">
+            <div class="panel-header">
+                <div class="panel-title" id="panel-title">Select a log entry</div>
+                <div class="panel-subtitle" id="panel-subtitle">Choose a log entry from the sidebar to view details</div>
+            </div>
+            <div class="content-areas" id="content-areas">
+                <div class="empty-state">No log entry selected</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

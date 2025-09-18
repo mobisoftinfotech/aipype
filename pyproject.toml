@@ -1,0 +1,91 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+
+[tool.pytest.ini_options]
+markers = [
+    "integration: marks tests as integration tests (may require network access)",
+    "ollama: marks tests requiring Ollama service",
+    "slow: marks tests that take significant time to run",
+    "sheets: marks tests requiring Google Sheets API access",
+]
+norecursedirs = ["temp", "*.egg", ".git", ".tox", "dist", "build"]
+filterwarnings = [
+    # Suppress HTTPX deprecation warnings from litellm (external library issue)
+    "ignore:Use 'content=<.*>' to upload raw bytes/text content.*:DeprecationWarning:httpx.*",
+    # Suppress Pydantic serialization warnings from litellm (external library issue)
+    "ignore:Pydantic serializer warnings.*:UserWarning:pydantic.*",
+    # More specific Pydantic warning patterns
+    "ignore:.*Expected.*fields but got.*:UserWarning:pydantic.*",
+    "ignore:.*serialized value may not be as expected.*:UserWarning:pydantic.*",
+    # Suppress asyncio deprecation warning from litellm (external library issue)
+    "ignore:There is no current event loop:DeprecationWarning:litellm.*",
+]
+
+[tool.uv.workspace]
+members = [
+    "packages/aipype",
+    "packages/aipype-extras",
+    "packages/aipype-g",
+    "packages/aipype-examples"
+]
+
+[tool.uv.sources]
+# Local development dependencies between packages
+aipype = { workspace = true }
+aipype-extras = { workspace = true }
+aipype-g = { workspace = true }
+aipype-examples = { workspace = true }
+
+[dependency-groups]
+dev = [
+    "ruff>=0.12.8",
+    "pytest>=8.3.0",
+    "pytest-cov>=4.0.0",
+    "psutil>=5.9.0",
+    "memory_profiler>=0.61.0",
+    "types-beautifulsoup4>=4.12.0.20250516",
+    "types-psutil>=7.0.0.20250801",
+    "types-setuptools>=80.9.0.20250809",
+    "aipype-extras",
+    "aipype-g",
+    "aipype-examples",
+]
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "ANN201", "ANN202", "ANN204", "ANN205", "ANN206"]  # Enable specific annotation rules
+ignore = ["ANN401", "E501"]  # Allow typing.Any usage and ignore line length
+
+[tool.ruff.lint.flake8-annotations]
+mypy-init-return = true  # Allow omitting return type for __init__ when args are typed
+suppress-none-returning = false  # Require return annotations even for None-returning functions
+
+[tool.coverage.run]
+source = ["src/aipype"]
+omit = [
+    "*/tests/*",
+    "*/test_*.py",
+    "*/__pycache__/*",
+    "*/venv/*",
+    "*/.venv/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
+show_missing = true
+precision = 2
+
+[tool.coverage.html]
+directory = "output/htmlcov"

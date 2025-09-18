@@ -1,0 +1,43 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "aipype-extras"
+version = "0.1.0a1"
+description = "Extra features and tools for the aipype framework"
+readme = "README.md"
+requires-python = ">=3.12"
+authors = [
+    {name = "Pritam Barhate", email = "pritambarhate@mobisoftinfotech.com"},
+]
+keywords = ["ai", "agents", "llm", "tools", "extras"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+dependencies = [
+    "aipype>=0.1.0a1",
+    "flask>=3.0.0",  # For log viewer
+]
+
+[project.scripts]
+aipype-log-viewer = "aipype_extras.llm_log_viewer.__main__:main"
+
+[dependency-groups]
+test = [
+    "pytest>=8.3.0",
+    "pytest-cov>=4.0.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests", "integration_tests"]
+markers = [
+    "integration: marks tests as integration tests",
+]
