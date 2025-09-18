@@ -38,6 +38,11 @@ dependencies = [
     "openai>=1.0.0",
 ]
 
+[project.urls]
+Homepage = "https://github.com/mobisoftinfotech/aipype"
+Repository = "https://github.com/mobisoftinfotech/aipype"
+Issues = "https://github.com/mobisoftinfotech/aipype/issues"
+
 
 [tool.pytest.ini_options]
 testpaths = ["tests", "integration_tests"]

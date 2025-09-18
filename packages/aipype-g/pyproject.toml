@@ -29,6 +29,11 @@ dependencies = [
     "google-api-python-client>=2.0.0",
 ]
 
+[project.urls]
+Homepage = "https://github.com/mobisoftinfotech/aipype"
+Repository = "https://github.com/mobisoftinfotech/aipype"
+Issues = "https://github.com/mobisoftinfotech/aipype/issues"
+
 [dependency-groups]
 test = [
     "pytest>=8.3.0",

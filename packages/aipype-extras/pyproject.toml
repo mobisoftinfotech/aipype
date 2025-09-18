@@ -27,6 +27,11 @@ dependencies = [
     "flask>=3.0.0",  # For log viewer
 ]
 
+[project.urls]
+Homepage = "https://github.com/mobisoftinfotech/aipype"
+Repository = "https://github.com/mobisoftinfotech/aipype"
+Issues = "https://github.com/mobisoftinfotech/aipype/issues"
+
 [project.scripts]
 aipype-log-viewer = "aipype_extras.llm_log_viewer.__main__:main"
 
