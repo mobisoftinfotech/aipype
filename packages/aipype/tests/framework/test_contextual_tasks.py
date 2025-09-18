@@ -242,7 +242,7 @@ class TestSearchTask:
         )
 
         with patch(
-            "aipype.framework.search_task.SerperSearcher",
+            "aipype.search_task.SerperSearcher",
             return_value=mock_searcher,
         ):
             result = task.run()
@@ -282,7 +282,7 @@ class TestSearchTask:
         )
 
         with patch(
-            "aipype.framework.search_task.SerperSearcher",
+            "aipype.search_task.SerperSearcher",
             return_value=mock_searcher,
         ):
             # Simulate dependency resolution that PipelineAgent would do

@@ -137,7 +137,7 @@ class TestPipelineAgent:
 
         # Setup expected results for dependency resolution
         with patch(
-            "aipype.framework.task_dependencies.DependencyResolver.resolve_dependencies"
+            "aipype.task_dependencies.DependencyResolver.resolve_dependencies"
         ) as mock_resolve:
             # Mock successful dependency resolution for all tasks
             mock_resolve.return_value = {}
@@ -185,7 +185,7 @@ class TestPipelineAgent:
 
         # Mock dependency resolution to handle dependencies
         with patch(
-            "aipype.framework.task_dependencies.DependencyResolver"
+            "aipype.task_dependencies.DependencyResolver"
         ) as mock_resolver_class:
             mock_resolver = Mock()
             mock_resolver_class.return_value = mock_resolver

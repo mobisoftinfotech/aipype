@@ -5,7 +5,7 @@ from typing import List, Optional, Dict, Any
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
-from aipype.framework.utils.common import setup_logger
+from aipype.utils.common import setup_logger
 
 
 # Google API scopes by service

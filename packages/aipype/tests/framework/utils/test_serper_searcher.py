@@ -215,7 +215,7 @@ class TestSerperSearcherSearch:
         mock_response.text = "Mock response text"
         return mock_response
 
-    @patch("aipype.framework.utils.serper_searcher.requests.post")
+    @patch("aipype.utils.serper_searcher.requests.post")
     @patch.dict(os.environ, {"SERPER_API_KEY": "test-key"})
     def test_search_successful(self, mock_post: Mock) -> None:
         mock_post.return_value = self._create_mock_response()
@@ -236,7 +236,7 @@ class TestSerperSearcherSearch:
         assert response.query == "test query"
         assert len(response.results) == 1
 
-    @patch("aipype.framework.utils.serper_searcher.requests.post")
+    @patch("aipype.utils.serper_searcher.requests.post")
     @patch.dict(os.environ, {"SERPER_API_KEY": "test-key"})
     def test_search_with_kwargs(self, mock_post: Mock) -> None:
         mock_post.return_value = self._create_mock_response()
@@ -249,7 +249,7 @@ class TestSerperSearcherSearch:
         assert call_json["gl"] == "us"
         assert call_json["hl"] == "en"
 
-    @patch("aipype.framework.utils.serper_searcher.requests.post")
+    @patch("aipype.utils.serper_searcher.requests.post")
     @patch.dict(os.environ, {"SERPER_API_KEY": "test-key"})
     def test_search_empty_query(self, mock_post: Mock) -> None:
         searcher = SerperSearcher()
@@ -257,7 +257,7 @@ class TestSerperSearcherSearch:
         with pytest.raises(ValueError, match="Search query cannot be empty"):
             searcher.search("")
 
-    @patch("aipype.framework.utils.serper_searcher.requests.post")
+    @patch("aipype.utils.serper_searcher.requests.post")
     @patch.dict(os.environ, {"SERPER_API_KEY": "test-key"})
     def test_search_invalid_max_results(self, mock_post: Mock) -> None:
         searcher = SerperSearcher()
@@ -268,7 +268,7 @@ class TestSerperSearcherSearch:
         with pytest.raises(ValueError, match="max_results must be between 1 and 100"):
             searcher.search("test", max_results=101)
 
-    @patch("aipype.framework.utils.serper_searcher.requests.post")
+    @patch("aipype.utils.serper_searcher.requests.post")
     @patch.dict(os.environ, {"SERPER_API_KEY": "test-key"})
     def test_search_api_error_401(self, mock_post: Mock) -> None:
         mock_post.return_value = self._create_mock_response(status_code=401)
@@ -278,7 +278,7 @@ class TestSerperSearcherSearch:
         with pytest.raises(RuntimeError, match="Serper API authentication failed"):
             searcher.search("test")
 
-    @patch("aipype.framework.utils.serper_searcher.requests.post")
+    @patch("aipype.utils.serper_searcher.requests.post")
     @patch.dict(os.environ, {"SERPER_API_KEY": "test-key"})
     def test_search_api_error_429(self, mock_post: Mock) -> None:
         mock_post.return_value = self._create_mock_response(status_code=429)
@@ -288,7 +288,7 @@ class TestSerperSearcherSearch:
         with pytest.raises(RuntimeError, match="Serper API rate limit exceeded"):
             searcher.search("test")
 
-    @patch("aipype.framework.utils.serper_searcher.requests.post")
+    @patch("aipype.utils.serper_searcher.requests.post")
     @patch.dict(os.environ, {"SERPER_API_KEY": "test-key"})
     def test_search_api_error_generic(self, mock_post: Mock) -> None:
         mock_post.return_value = self._create_mock_response(status_code=500)
@@ -298,7 +298,7 @@ class TestSerperSearcherSearch:
         with pytest.raises(RuntimeError, match="Serper API request failed: 500"):
             searcher.search("test")
 
-    @patch("aipype.framework.utils.serper_searcher.requests.post")
+    @patch("aipype.utils.serper_searcher.requests.post")
     @patch.dict(os.environ, {"SERPER_API_KEY": "test-key"})
     def test_search_timeout(self, mock_post: Mock) -> None:
         mock_post.side_effect = requests.exceptions.Timeout()
@@ -311,7 +311,7 @@ class TestSerperSearcherSearch:
         ):
             searcher.search("test")
 
-    @patch("aipype.framework.utils.serper_searcher.requests.post")
+    @patch("aipype.utils.serper_searcher.requests.post")
     @patch.dict(os.environ, {"SERPER_API_KEY": "test-key"})
     def test_search_connection_error(self, mock_post: Mock) -> None:
         mock_post.side_effect = requests.exceptions.ConnectionError("Connection failed")
@@ -321,7 +321,7 @@ class TestSerperSearcherSearch:
         with pytest.raises(RuntimeError, match="Failed to connect to Serper API"):
             searcher.search("test")
 
-    @patch("aipype.framework.utils.serper_searcher.requests.post")
+    @patch("aipype.utils.serper_searcher.requests.post")
     @patch.dict(os.environ, {"SERPER_API_KEY": "test-key"})
     def test_search_request_exception(self, mock_post: Mock) -> None:
         mock_post.side_effect = requests.exceptions.RequestException("Request failed")
@@ -334,7 +334,7 @@ class TestSerperSearcherSearch:
         ):
             searcher.search("test")
 
-    @patch("aipype.framework.utils.serper_searcher.requests.post")
+    @patch("aipype.utils.serper_searcher.requests.post")
     @patch.dict(os.environ, {"SERPER_API_KEY": "test-key"})
     def test_search_json_parse_error(self, mock_post: Mock) -> None:
         mock_response = Mock()

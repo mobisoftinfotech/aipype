@@ -1,6 +1,6 @@
 {
   "include": [
-    "framework",
+    "packages",
     "tests"
   ],
   "exclude": [

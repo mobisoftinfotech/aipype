@@ -5,7 +5,7 @@ import pytest
 # from typing import Any  # Unused import
 from unittest.mock import patch, Mock
 import requests
-from aipype.framework.utils.url_fetcher import (
+from aipype.utils.url_fetcher import (
     URLFetcher,
     fetch_url,
     fetch_url_headers,
@@ -64,7 +64,7 @@ class TestURLFetcher:
 class TestFetchURL:
     """Test fetch_url convenience function."""
 
-    @patch("aipype.framework.utils.url_fetcher.requests.Session.get")
+    @patch("aipype.utils.url_fetcher.requests.Session.get")
     def test_fetch_url_successful(self, mock_get: Mock) -> None:
         """Test successful URL fetching."""
         # Mock response
@@ -95,7 +95,7 @@ class TestFetchURL:
         with pytest.raises(ValueError, match="URL cannot be empty"):
             fetch_url("")
 
-    @patch("aipype.framework.utils.url_fetcher.requests.Session.get")
+    @patch("aipype.utils.url_fetcher.requests.Session.get")
     def test_fetch_url_timeout(self, mock_get: Mock) -> None:
         """Test fetch_url timeout handling."""
         mock_get.side_effect = requests.exceptions.Timeout()
@@ -103,7 +103,7 @@ class TestFetchURL:
         with pytest.raises(RuntimeError, match="Request timed out"):
             fetch_url("https://example.com")
 
-    @patch("aipype.framework.utils.url_fetcher.requests.Session.get")
+    @patch("aipype.utils.url_fetcher.requests.Session.get")
     def test_fetch_url_connection_error(self, mock_get: Mock) -> None:
         """Test fetch_url connection error handling."""
         mock_get.side_effect = requests.exceptions.ConnectionError("Connection failed")
@@ -115,7 +115,7 @@ class TestFetchURL:
 class TestFetchMainText:
     """Test fetch_main_text function with various content types."""
 
-    @patch("aipype.framework.utils.url_fetcher.fetch_url")
+    @patch("aipype.utils.url_fetcher.fetch_url")
     def test_fetch_main_text_html_content(self, mock_fetch_url: Mock) -> None:
         """Test HTML text extraction."""
         html_content = """
@@ -156,7 +156,7 @@ class TestFetchMainText:
             result["text_size"] < result["original_size"]
         )  # Extracted text should be smaller
 
-    @patch("aipype.framework.utils.url_fetcher.fetch_url")
+    @patch("aipype.utils.url_fetcher.fetch_url")
     def test_fetch_main_text_basic_html_method(self, mock_fetch_url: Mock) -> None:
         """Test HTML text extraction with basic method."""
         html_content = """
@@ -189,7 +189,7 @@ class TestFetchMainText:
         assert "Main Content" in result["text"]
         assert "main section" in result["text"]
 
-    @patch("aipype.framework.utils.url_fetcher.fetch_url")
+    @patch("aipype.utils.url_fetcher.fetch_url")
     def test_fetch_main_text_pdf_content(self, mock_fetch_url: Mock) -> None:
         """Test PDF text extraction with mocked PDF content."""
         # Create a simple mock PDF bytes
@@ -207,7 +207,7 @@ class TestFetchMainText:
         }
 
         # Mock pypdf functionality
-        with patch("aipype.framework.utils.url_fetcher.PdfReader") as mock_pdf_reader:
+        with patch("aipype.utils.url_fetcher.PdfReader") as mock_pdf_reader:
             mock_page = Mock()
             mock_page.extract_text.return_value = (
                 "This is extracted text from the PDF page."
@@ -224,7 +224,7 @@ class TestFetchMainText:
             assert "extracted text from the PDF" in result["text"]
             assert "--- Page 1 ---" in result["text"]
 
-    @patch("aipype.framework.utils.url_fetcher.fetch_url")
+    @patch("aipype.utils.url_fetcher.fetch_url")
     def test_fetch_main_text_docx_content(self, mock_fetch_url: Mock) -> None:
         """Test DOCX text extraction with mocked DOCX content."""
         docx_content = b"PK mock docx content"
@@ -241,7 +241,7 @@ class TestFetchMainText:
         }
 
         # Mock python-docx functionality - need to patch where it's imported in url_fetcher
-        with patch("aipype.framework.utils.url_fetcher.DocxDocument") as mock_docx_doc:
+        with patch("aipype.utils.url_fetcher.DocxDocument") as mock_docx_doc:
             # Mock paragraphs
             mock_paragraph1 = Mock()
             mock_paragraph1.text = "First paragraph of the document."
@@ -274,7 +274,7 @@ class TestFetchMainText:
             assert "Second paragraph" in result["text"]
             assert "Header 1 | Header 2" in result["text"]
 
-    @patch("aipype.framework.utils.url_fetcher.fetch_url")
+    @patch("aipype.utils.url_fetcher.fetch_url")
     def test_fetch_main_text_plain_text(self, mock_fetch_url: Mock) -> None:
         """Test plain text content handling."""
         text_content = (
@@ -299,7 +299,7 @@ class TestFetchMainText:
         assert result["text"] == text_content
         assert result["text_size"] == len(text_content)
 
-    @patch("aipype.framework.utils.url_fetcher.fetch_url")
+    @patch("aipype.utils.url_fetcher.fetch_url")
     def test_fetch_main_text_unsupported_content_type(
         self, mock_fetch_url: Mock
     ) -> None:
@@ -318,7 +318,7 @@ class TestFetchMainText:
         with pytest.raises(ValueError, match="Unsupported content type: image/jpeg"):
             fetch_main_text("https://example.com/image.jpg")
 
-    @patch("aipype.framework.utils.url_fetcher.fetch_url")
+    @patch("aipype.utils.url_fetcher.fetch_url")
     def test_fetch_main_text_without_metadata(self, mock_fetch_url: Mock) -> None:
         """Test fetch_main_text with metadata disabled."""
         html_content = "<html><body><p>Simple content</p></body></html>"
@@ -343,7 +343,7 @@ class TestFetchMainText:
 
     def test_dependencies_available(self) -> None:
         """Test that all required dependencies are available."""
-        from aipype.framework.utils.url_fetcher import (
+        from aipype.utils.url_fetcher import (
             extract_html_text,
             extract_pdf_text,
             extract_docx_text,
@@ -359,7 +359,7 @@ class TestFetchMainText:
 class TestFetchURLHeaders:
     """Test fetch_url_headers function."""
 
-    @patch("aipype.framework.utils.url_fetcher.requests.Session.head")
+    @patch("aipype.utils.url_fetcher.requests.Session.head")
     def test_fetch_url_headers_successful(self, mock_head: Mock) -> None:
         """Test successful header fetching."""
         mock_response = Mock()
@@ -379,7 +379,7 @@ class TestFetchURLHeaders:
         assert result["content_length"] == 1234
         assert "response_time" in result
 
-    @patch("aipype.framework.utils.url_fetcher.requests.Session.head")
+    @patch("aipype.utils.url_fetcher.requests.Session.head")
     def test_fetch_url_headers_no_content_length(self, mock_head: Mock) -> None:
         """Test header fetching without content-length."""
         mock_response = Mock()

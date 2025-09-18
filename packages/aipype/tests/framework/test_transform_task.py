@@ -1313,7 +1313,7 @@ class TestTransformTaskIntegration:
 
     def test_transform_task_logging_integration(self) -> None:
         """TransformTask logging works correctly."""
-        with patch("aipype.framework.base_task.setup_logger") as mock_setup_logger:
+        with patch("aipype.base_task.setup_logger") as mock_setup_logger:
             mock_logger = Mock()
             mock_setup_logger.return_value = mock_logger
 

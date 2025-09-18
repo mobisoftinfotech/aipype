@@ -192,10 +192,8 @@ def mock_external_apis(
                 return
     with (
         patch("litellm.completion") as mock_llm,
-        patch(
-            "aipype.framework.utils.serper_searcher.SerperSearcher"
-        ) as mock_searcher_class,
-        patch("aipype.framework.utils.url_fetcher.fetch_main_text") as mock_fetcher,
+        patch("aipype.utils.serper_searcher.SerperSearcher") as mock_searcher_class,
+        patch("aipype.utils.url_fetcher.fetch_main_text") as mock_fetcher,
     ):
         # Default LLM mock
         mock_response = Mock()

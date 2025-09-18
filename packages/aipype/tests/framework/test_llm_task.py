@@ -66,7 +66,7 @@ class TestLLMTaskInitialization:
         """LLMTask configures litellm timeout when specified."""
         config = {"llm_provider": "openai", "llm_model": "gpt-4", "timeout": 45}
 
-        with patch("aipype.framework.llm_task.litellm") as mock_litellm:
+        with patch("aipype.llm_task.litellm") as mock_litellm:
             LLMTask("timeout_test", config)
             assert mock_litellm.request_timeout == 45
 
@@ -74,7 +74,7 @@ class TestLLMTaskInitialization:
         """LLMTask disables litellm verbose logging."""
         config = {"llm_provider": "openai", "llm_model": "gpt-4"}
 
-        with patch("aipype.framework.llm_task.litellm") as mock_litellm:
+        with patch("aipype.llm_task.litellm") as mock_litellm:
             LLMTask("verbose_test", config)
             assert mock_litellm.set_verbose is False
 
@@ -651,7 +651,7 @@ class TestLLMTaskExecution:
         mock_response.choices[0].message.content = "Test response"
 
         with patch(
-            "aipype.framework.llm_task.litellm.completion", return_value=mock_response
+            "aipype.llm_task.litellm.completion", return_value=mock_response
         ) as mock_completion:
             result = task._make_llm_call()
 
@@ -680,7 +680,7 @@ class TestLLMTaskExecution:
         mock_response = Mock()
 
         with patch(
-            "aipype.framework.llm_task.litellm.completion", return_value=mock_response
+            "aipype.llm_task.litellm.completion", return_value=mock_response
         ) as mock_completion:
             task._make_llm_call()
 
@@ -701,7 +701,7 @@ class TestLLMTaskExecution:
         mock_response = Mock()
 
         with patch(
-            "aipype.framework.llm_task.litellm.completion", return_value=mock_response
+            "aipype.llm_task.litellm.completion", return_value=mock_response
         ) as mock_completion:
             task._make_llm_call()
 
@@ -718,7 +718,7 @@ class TestLLMTaskExecution:
         mock_response = Mock()
 
         with patch(
-            "aipype.framework.llm_task.litellm.completion", return_value=mock_response
+            "aipype.llm_task.litellm.completion", return_value=mock_response
         ) as mock_completion:
             task._make_llm_call()
 
@@ -733,7 +733,7 @@ class TestLLMTaskExecution:
         task.resolved_prompt = "Test prompt"
 
         with patch(
-            "aipype.framework.llm_task.litellm.completion",
+            "aipype.llm_task.litellm.completion",
             side_effect=RuntimeError("API Error"),
         ):
             with pytest.raises(
@@ -832,9 +832,7 @@ class TestLLMTaskExecution:
         mock_response.choices[0].message.content = "ML analysis complete"
         mock_response.model = "gpt-4-turbo"
 
-        with patch(
-            "aipype.framework.llm_task.litellm.completion", return_value=mock_response
-        ):
+        with patch("aipype.llm_task.litellm.completion", return_value=mock_response):
             result = task.run()
             assert result.is_success()
             assert result.data["content"] == "ML analysis complete"
@@ -1249,9 +1247,7 @@ class TestLLMTaskErrorHandling:
         ]
 
         for _, error in error_scenarios:
-            with patch(
-                "aipype.framework.llm_task.litellm.completion", side_effect=error
-            ):
+            with patch("aipype.llm_task.litellm.completion", side_effect=error):
                 with pytest.raises(
                     RuntimeError,
                     match=f"LLMTask API call operation failed: LLM API call to.*failed: {str(error)}",

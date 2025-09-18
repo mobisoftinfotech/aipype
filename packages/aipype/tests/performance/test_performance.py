@@ -274,7 +274,7 @@ class TestPipelineAgentPerformance:
         agent_parallel = ParallelTestAgent("parallel", {"enable_parallel": True})
 
         with patch(
-            "aipype.framework.task_dependencies.DependencyResolver"
+            "aipype.task_dependencies.DependencyResolver"
         ) as mock_resolver_class:
             mock_resolver = Mock()
             mock_resolver_class.return_value = mock_resolver
@@ -295,7 +295,7 @@ class TestPipelineAgentPerformance:
         agent_sequential = ParallelTestAgent("sequential", {"enable_parallel": False})
 
         with patch(
-            "aipype.framework.task_dependencies.DependencyResolver"
+            "aipype.task_dependencies.DependencyResolver"
         ) as mock_resolver_class:
             mock_resolver = Mock()
             mock_resolver_class.return_value = mock_resolver
@@ -511,7 +511,7 @@ class TestPipelineAgentPerformance:
         agent = MemoryTestAgent("memory_test", {})
 
         with patch(
-            "aipype.framework.task_dependencies.DependencyResolver"
+            "aipype.task_dependencies.DependencyResolver"
         ) as mock_resolver_class:
             mock_resolver = Mock()
             mock_resolver_class.return_value = mock_resolver

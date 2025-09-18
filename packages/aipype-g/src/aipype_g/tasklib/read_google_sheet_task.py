@@ -4,9 +4,9 @@ from typing import List, Dict, Any, Optional
 
 from typing import override
 
-from aipype.framework.base_task import BaseTask
-from aipype.framework.task_dependencies import TaskDependency
-from aipype.framework.task_result import TaskResult
+from aipype.base_task import BaseTask
+from aipype.task_dependencies import TaskDependency
+from aipype.task_result import TaskResult
 from .google_sheets_service import GoogleSheetsService, GoogleSheetsError
 from .google_sheets_models import SheetData
 

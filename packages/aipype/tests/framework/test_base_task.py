@@ -49,7 +49,7 @@ class TestBaseTaskInitialization:
         assert task.config == config
         assert task.get_status() == TaskStatus.NOT_STARTED
 
-    @patch("aipype.framework.base_task.setup_logger")
+    @patch("aipype.base_task.setup_logger")
     def test_logger_setup(self, mock_setup_logger: MagicMock) -> None:
         mock_logger = MagicMock()
         mock_setup_logger.return_value = mock_logger
@@ -365,7 +365,7 @@ class TestBaseTaskHelperMethods:
 class TestBaseTaskLogging:
     """Test BaseTask logging behavior."""
 
-    @patch("aipype.framework.base_task.setup_logger")
+    @patch("aipype.base_task.setup_logger")
     def test_logger_setup_with_task_name(self, mock_setup_logger: MagicMock) -> None:
         """Test logger is set up with correct task name."""
         mock_logger = MagicMock()
@@ -376,7 +376,7 @@ class TestBaseTaskLogging:
         mock_setup_logger.assert_called_once_with("task.my_task")
         assert task.logger == mock_logger
 
-    @patch("aipype.framework.base_task.setup_logger")
+    @patch("aipype.base_task.setup_logger")
     def test_status_change_logging_started(self, mock_setup_logger: MagicMock) -> None:
         """Test logging when task status changes to STARTED."""
         mock_logger = MagicMock()
@@ -389,7 +389,7 @@ class TestBaseTaskLogging:
             "Task 'test_task' status changed from not_started to started"
         )
 
-    @patch("aipype.framework.base_task.setup_logger")
+    @patch("aipype.base_task.setup_logger")
     def test_status_change_logging_success(self, mock_setup_logger: MagicMock) -> None:
         """Test logging when task status changes to SUCCESS."""
         mock_logger = MagicMock()
@@ -402,7 +402,7 @@ class TestBaseTaskLogging:
             "Task 'test_task' status changed from not_started to success"
         )
 
-    @patch("aipype.framework.base_task.setup_logger")
+    @patch("aipype.base_task.setup_logger")
     def test_status_change_logging_error(self, mock_setup_logger: MagicMock) -> None:
         """Test logging when task status changes to ERROR."""
         mock_logger = MagicMock()
@@ -415,7 +415,7 @@ class TestBaseTaskLogging:
             "Task 'test_task' status changed from not_started to error"
         )
 
-    @patch("aipype.framework.base_task.setup_logger")
+    @patch("aipype.base_task.setup_logger")
     def test_status_change_logging_reset(self, mock_setup_logger: MagicMock) -> None:
         """Test logging when task is reset."""
         mock_logger = MagicMock()
@@ -436,7 +436,7 @@ class TestBaseTaskLogging:
         ]
         mock_logger.info.assert_has_calls(expected_calls, any_order=False)
 
-    @patch("aipype.framework.base_task.setup_logger")
+    @patch("aipype.base_task.setup_logger")
     def test_set_agent_name_logging(self, mock_setup_logger: MagicMock) -> None:
         """Test logging when agent name is set."""
         mock_logger = MagicMock()
@@ -449,7 +449,7 @@ class TestBaseTaskLogging:
             "Task 'test_task' assigned to agent 'my_agent'"
         )
 
-    @patch("aipype.framework.base_task.setup_logger")
+    @patch("aipype.base_task.setup_logger")
     def test_multiple_status_changes_logging(
         self, mock_setup_logger: MagicMock
     ) -> None:

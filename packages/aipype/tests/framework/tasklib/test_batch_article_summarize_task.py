@@ -3,7 +3,7 @@
 import pytest
 from typing import Any, Dict, List
 from unittest.mock import Mock, patch
-from aipype.framework.tasklib.web.batch_article_summarize_task import (
+from aipype.tasklib.web.batch_article_summarize_task import (
     BatchArticleSummarizeTask,
 )
 from aipype import TaskDependency, DependencyType, TaskResult
@@ -197,7 +197,7 @@ class TestBatchArticleSummarizeTask:
             in result.error
         )
 
-    @patch("aipype.framework.llm_task.LLMTask.run")
+    @patch("aipype.llm_task.LLMTask.run")
     def test_successful_summarization_with_defaults(
         self, mock_llm_run: Mock, task_with_default_config: BatchArticleSummarizeTask
     ) -> None:
@@ -253,7 +253,7 @@ class TestBatchArticleSummarizeTask:
         # Verify LLM was called 3 times
         assert mock_llm_run.call_count == 3
 
-    @patch("aipype.framework.llm_task.LLMTask.run")
+    @patch("aipype.llm_task.LLMTask.run")
     def test_successful_summarization_with_custom_config(
         self, mock_llm_run: Mock, task_with_custom_config: BatchArticleSummarizeTask
     ) -> None:
@@ -284,7 +284,7 @@ class TestBatchArticleSummarizeTask:
         assert result.data["provider"] == "anthropic"
         assert result.data["total_tokens"] == 360  # 120 * 3 articles
 
-    @patch("aipype.framework.llm_task.LLMTask.run")
+    @patch("aipype.llm_task.LLMTask.run")
     def test_content_length_validation(
         self, mock_llm_run: Mock, short_content_articles: List[Dict[str, Any]]
     ) -> None:
@@ -334,7 +334,7 @@ class TestBatchArticleSummarizeTask:
         # Verify LLM was never called
         assert mock_llm_run.call_count == 0
 
-    @patch("aipype.framework.llm_task.LLMTask.run")
+    @patch("aipype.llm_task.LLMTask.run")
     def test_content_truncation(
         self, mock_llm_run: Mock, long_content_article: Dict[str, Any]
     ) -> None:
@@ -376,7 +376,7 @@ class TestBatchArticleSummarizeTask:
         # The LLMTask config should contain truncated content in the prompt
         # We can't easily verify the exact content, but we know it was processed
 
-    @patch("aipype.framework.llm_task.LLMTask.run")
+    @patch("aipype.llm_task.LLMTask.run")
     def test_mixed_valid_invalid_articles(
         self, mock_llm_run: Mock, mixed_articles: List[Dict[str, Any]]
     ) -> None:
@@ -431,7 +431,7 @@ class TestBatchArticleSummarizeTask:
         for i in range(3, 5):
             assert summaries[i]["summary"].startswith("[Skipped:")
 
-    @patch("aipype.framework.llm_task.LLMTask.run")
+    @patch("aipype.llm_task.LLMTask.run")
     def test_llm_task_failure_handling(
         self, mock_llm_run: Mock, sample_articles: List[Dict[str, Any]]
     ) -> None:
@@ -466,7 +466,7 @@ class TestBatchArticleSummarizeTask:
         assert summaries[1]["summary"].startswith("[Summarization failed:")
         assert not summaries[2]["summary"].startswith("[Summarization failed:")
 
-    @patch("aipype.framework.llm_task.LLMTask.run")
+    @patch("aipype.llm_task.LLMTask.run")
     def test_generic_response_detection(
         self, mock_llm_run: Mock, sample_articles: List[Dict[str, Any]]
     ) -> None:
@@ -516,7 +516,7 @@ class TestBatchArticleSummarizeTask:
         assert summaries[1]["summary"].startswith("[LLM returned generic response")
         assert not summaries[2]["summary"].startswith("[LLM returned generic response")
 
-    @patch("aipype.framework.llm_task.LLMTask.run")
+    @patch("aipype.llm_task.LLMTask.run")
     def test_short_response_detection(
         self, mock_llm_run: Mock, sample_articles: List[Dict[str, Any]]
     ) -> None:
@@ -547,7 +547,7 @@ class TestBatchArticleSummarizeTask:
         assert not summaries[1]["summary"].startswith("[LLM returned generic response")
         assert summaries[2]["summary"].startswith("[LLM returned generic response")
 
-    @patch("aipype.framework.llm_task.LLMTask.run")
+    @patch("aipype.llm_task.LLMTask.run")
     def test_formatted_summaries_output(
         self, mock_llm_run: Mock, sample_articles: List[Dict[str, Any]]
     ) -> None:
@@ -585,7 +585,7 @@ class TestBatchArticleSummarizeTask:
             (800, 2500, 75, 0.5, 250),
         ],
     )
-    @patch("aipype.framework.llm_task.LLMTask.run")
+    @patch("aipype.llm_task.LLMTask.run")
     def test_parameter_configurations(
         self,
         mock_llm_run: Mock,
@@ -622,7 +622,7 @@ class TestBatchArticleSummarizeTask:
         # Verify custom parameters are reflected in result
         assert result.data["summary_length"] == summary_length
 
-    @patch("aipype.framework.llm_task.LLMTask.run")
+    @patch("aipype.llm_task.LLMTask.run")
     def test_single_article_processing(self, mock_llm_run: Mock) -> None:
         """Test processing of a single article."""
         mock_llm_run.return_value = TaskResult.success(
@@ -651,7 +651,7 @@ class TestBatchArticleSummarizeTask:
         assert len(result.data["summaries"]) == 1
         assert mock_llm_run.call_count == 1
 
-    @patch("aipype.framework.llm_task.LLMTask.run")
+    @patch("aipype.llm_task.LLMTask.run")
     def test_unicode_content_handling(self, mock_llm_run: Mock) -> None:
         """Test handling of articles with Unicode content."""
         mock_llm_run.return_value = TaskResult.success(
@@ -677,7 +677,7 @@ class TestBatchArticleSummarizeTask:
         assert result.data["successful_summaries"] == 1
         assert "🇪🇸" in result.data["summaries"][0]["title"]
 
-    @patch("aipype.framework.llm_task.LLMTask.run")
+    @patch("aipype.llm_task.LLMTask.run")
     def test_llm_task_creation_parameters(
         self, mock_llm_run: Mock, sample_articles: List[Dict[str, Any]]
     ) -> None:
@@ -703,7 +703,7 @@ class TestBatchArticleSummarizeTask:
 
         # We need to patch the LLMTask creation to verify parameters
         with patch(
-            "aipype.framework.tasklib.web.batch_article_summarize_task.LLMTask"
+            "aipype.tasklib.web.batch_article_summarize_task.LLMTask"
         ) as mock_llm_task_class:
             mock_llm_instance = Mock()
             mock_llm_instance.run.return_value = TaskResult.success(
@@ -729,7 +729,7 @@ class TestBatchArticleSummarizeTask:
             assert config["max_tokens"] == 350
             assert config["context"] == "You are an expert content summarizer."
 
-    @patch("aipype.framework.llm_task.LLMTask.run")
+    @patch("aipype.llm_task.LLMTask.run")
     def test_prompt_template_generation(self, mock_llm_run: Mock) -> None:
         """Test that prompt templates are generated correctly."""
         mock_llm_run.return_value = TaskResult.success(
@@ -757,7 +757,7 @@ class TestBatchArticleSummarizeTask:
         )
 
         with patch(
-            "aipype.framework.tasklib.web.batch_article_summarize_task.LLMTask"
+            "aipype.tasklib.web.batch_article_summarize_task.LLMTask"
         ) as mock_llm_task_class:
             mock_llm_instance = Mock()
             mock_llm_instance.run.return_value = TaskResult.success(

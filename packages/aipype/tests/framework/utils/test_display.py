@@ -1,6 +1,6 @@
 """Tests for display utilities."""
 
-from aipype.framework.utils.display import (
+from aipype.utils.display import (
     trim_text,
     wrap_single_line,
     wrap_text_lines,

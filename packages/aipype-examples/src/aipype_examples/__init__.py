@@ -8,4 +8,4 @@ Structure:
 - tutorial/: Progressive tutorial files for learning the framework
 """
 
-__version__ = "0.1.0"
+__version__ = "0.1.0a2"

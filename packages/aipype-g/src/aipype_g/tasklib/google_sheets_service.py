@@ -8,7 +8,7 @@ from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build  # pyright: ignore[reportUnknownVariableType]
 from googleapiclient.errors import HttpError
 
-from aipype.framework.utils.common import setup_logger
+from aipype.utils.common import setup_logger
 from .google_sheets_models import SheetData, SheetRange, SpreadsheetInfo
 from .google_auth_service import GoogleAuthService, SHEETS_SCOPES
 
