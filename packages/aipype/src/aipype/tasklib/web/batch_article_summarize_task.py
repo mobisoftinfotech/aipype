@@ -1,7 +1,9 @@
 """Reusable batch article summarization task for the aipype framework."""
 
 from typing import Any, Dict, List, override
-from ... import BaseTask, TaskDependency, TaskResult
+from ...base_task import BaseTask
+from ...task_dependencies import TaskDependency
+from ...task_result import TaskResult
 from ...llm_task import LLMTask
 
 

@@ -3,7 +3,7 @@
 # run_tests.sh - Test runner script for aipype workspace
 #
 # This script runs unit and/or integration tests for all packages in the workspace.
-# Only packages with test directories are included (excludes aipype-examples).
+# All packages with test directories are included.
 #
 # Usage:
 #   ./scripts/run_tests.sh              # Run unit tests only (default)
@@ -113,7 +113,7 @@ fi
 echo ""
 
 # Packages with tests (excludes aipype-examples)
-PACKAGES_WITH_TESTS=("aipype" "aipype-extras" "aipype-g")
+PACKAGES_WITH_TESTS=("aipype" "aipype-extras" "aipype-g" "aipype-examples")
 
 # Build pytest arguments
 PYTEST_ARGS=()

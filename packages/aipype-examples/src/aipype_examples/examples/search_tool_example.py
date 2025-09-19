@@ -6,10 +6,49 @@ where the LLM can automatically search the web and get content from results.
 """
 
 import os
-from typing import Any, Dict, List
+from typing import Any, Dict, List, override
 
-from aipype import LLMTask, search_with_content
+from aipype import LLMTask, search_with_content, PipelineAgent, BaseTask
 from aipype import print_header, print_message_box
+
+
+class SearchExampleAgent(PipelineAgent):
+    """Agent that demonstrates LLM tool calling with search functionality."""
+
+    @override
+    def setup_tasks(self) -> List[BaseTask]:
+        """Set up the LLM task with search tool."""
+        # Get configuration with defaults
+        llm_provider = self.config.get("llm_provider", "openai")
+        llm_model = self.config.get("llm_model", "gpt-4o-mini")
+        prompt = self.config.get(
+            "prompt",
+            """I need to research the latest developments in renewable energy technology in 2025.
+
+Please search for recent information and provide:
+1. Key technological breakthroughs or innovations
+2. Major industry developments or announcements
+3. Notable trends or statistics
+4. Important challenges or opportunities
+
+Use the search_with_content tool to find current information, then analyze the content to give me a comprehensive overview.""",
+        )
+        temperature = self.config.get("temperature", 0.3)
+        max_tokens = self.config.get("max_tokens", 1500)
+
+        task = LLMTask(
+            "search_research_task",
+            {
+                "llm_provider": llm_provider,
+                "llm_model": llm_model,
+                "prompt": prompt,
+                "tools": [search_with_content],
+                "temperature": temperature,
+                "max_tokens": max_tokens,
+            },
+        )
+
+        return [task]
 
 
 def main() -> None:

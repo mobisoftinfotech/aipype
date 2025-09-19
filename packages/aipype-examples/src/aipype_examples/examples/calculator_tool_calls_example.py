@@ -14,9 +14,9 @@ Run with:
 """
 
 import logging
-from typing import List
+from typing import List, override
 
-from aipype import LLMTask, tool
+from aipype import LLMTask, tool, PipelineAgent, BaseTask
 from aipype import print_header
 
 
@@ -57,6 +57,37 @@ def calculate_average(numbers: List[float]) -> float:
     result = sum(numbers) / len(numbers)
     logger.info(f"[TOOL] calculate_average() returning {result}")
     return result
+
+
+class CalculatorAgent(PipelineAgent):
+    """Agent that demonstrates tool calling with calculator functions."""
+
+    @override
+    def setup_tasks(self) -> List[BaseTask]:
+        """Set up the LLM task with calculator tools."""
+        # Get configuration with defaults
+        llm_provider = self.config.get("llm_provider", "openai")
+        llm_model = self.config.get("llm_model", "gpt-4o-mini")
+        prompt = self.config.get(
+            "prompt",
+            "Please add 15 and 27, then calculate the average of [10, 20, 30, 40, 50]. Use the available tools. It is very important.",
+        )
+        temperature = self.config.get("temperature", 0.1)
+        max_tokens = self.config.get("max_tokens", 300)
+
+        task = LLMTask(
+            "calculator",
+            {
+                "llm_provider": llm_provider,
+                "llm_model": llm_model,
+                "prompt": prompt,
+                "tools": [add, calculate_average],
+                "temperature": temperature,
+                "max_tokens": max_tokens,
+            },
+        )
+
+        return [task]
 
 
 def main() -> None:

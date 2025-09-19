@@ -10,7 +10,7 @@ This is a new project. So if you find the project useful, please give it a star 
 
 ## Status
 
-**Alpha Release** - `aipype` is currently in Alpha stage (v0.1.0a1). We are improving it rapidly and adding more reusable tasks. APIs may change between releases. 
+**Alpha Release** - `aipype` is currently in Alpha stage. We are improving it rapidly and adding more reusable tasks. APIs may change between releases. 
 
 ## Examples
 

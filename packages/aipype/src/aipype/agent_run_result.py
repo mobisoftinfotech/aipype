@@ -33,7 +33,7 @@ class AgentRunResult:
     failed_tasks: int = 0
     total_phases: int = 0
     execution_time: float = 0.0
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: Dict[str, Any] = field(default_factory=lambda: {})
     error_message: Optional[str] = None
 
     @classmethod
