@@ -1,6 +1,6 @@
 """aipype-g: Google API integrations for the aipype framework."""
 
-__version__ = "0.1.0a2"
+__version__ = "0.1.0a3"
 
 # Google tasklib exports
 from .tasklib.google_oauth_task import GoogleOAuthTask

@@ -1,6 +1,6 @@
 """aipype: A modular AI agent framework with declarative pipeline-based task orchestration."""
 
-__version__ = "0.1.0a2"
+__version__ = "0.1.0a3"
 
 # Core framework exports
 from .pipeline_agent import PipelineAgent, TaskExecutionPlan
