@@ -8,6 +8,7 @@ from .base_task import BaseTask
 from .task_result import TaskResult
 from .task_context import TaskContext
 from .task_dependencies import DependencyResolver
+from .agent_run_result import AgentRunResult
 from .utils.common import setup_logger
 
 
@@ -267,15 +268,15 @@ class PipelineAgent:
         except Exception as e:
             self.logger.warning(f"Auto-setup failed: {e}")
 
-    def run(self) -> Dict[str, Any]:
+    def run(self) -> AgentRunResult:
         """Run all tasks using automatic dependency-based orchestration.
 
         Returns:
-            Execution results dictionary
+            AgentRunResult containing execution status and results
         """
         if self._is_running:
             self.logger.warning(f"PipelineAgent '{self.name}' is already running")
-            return {"status": "already_running", "results": []}
+            return AgentRunResult.running(self.name)
 
         self._is_running = True
         self.logger.info(
@@ -289,16 +290,38 @@ class PipelineAgent:
             # Execute phases
             results = self._execute_phases()
 
-            return {
-                "status": "completed",
-                "agent_name": self.name,
-                "total_tasks": len(self.tasks),
-                "completed_tasks": len(
-                    [r for r in results if r.get("status") == "success"]
-                ),
-                "total_phases": self.execution_plan.total_phases(),
-                "results": results,
-            }
+            # Count successful and failed tasks
+            completed_tasks = len([r for r in results if r.get("status") == "success"])
+            failed_tasks = len(self.tasks) - completed_tasks
+            total_phases = self.execution_plan.total_phases()
+
+            # Determine status based on task completion
+            if completed_tasks == len(self.tasks):
+                # All tasks completed successfully
+                return AgentRunResult.success(
+                    agent_name=self.name,
+                    total_tasks=len(self.tasks),
+                    completed_tasks=completed_tasks,
+                    total_phases=total_phases,
+                )
+            elif completed_tasks > 0:
+                # Some tasks succeeded, some failed
+                return AgentRunResult.partial(
+                    agent_name=self.name,
+                    total_tasks=len(self.tasks),
+                    completed_tasks=completed_tasks,
+                    failed_tasks=failed_tasks,
+                    total_phases=total_phases,
+                )
+            else:
+                # No tasks succeeded (all failed)
+                return AgentRunResult.failure(
+                    agent_name=self.name,
+                    total_tasks=len(self.tasks),
+                    failed_tasks=failed_tasks,
+                    error_message="All tasks failed to complete",
+                    total_phases=total_phases,
+                )
 
         finally:
             self._is_running = False

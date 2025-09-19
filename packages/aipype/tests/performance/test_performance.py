@@ -17,6 +17,7 @@ from aipype import (
     DependencyType,
     DependencyResolver,
     TaskExecutionPlan,
+    AgentRunStatus,
 )
 
 
@@ -306,10 +307,10 @@ class TestPipelineAgentPerformance:
             sequential_time = time.time() - start_time
 
         # Verify both completed successfully
-        assert result_parallel["status"] == "completed"
-        assert result_sequential["status"] == "completed"
-        assert result_parallel["completed_tasks"] == 6
-        assert result_sequential["completed_tasks"] == 6
+        assert result_parallel.status == AgentRunStatus.SUCCESS
+        assert result_sequential.status == AgentRunStatus.SUCCESS
+        assert result_parallel.completed_tasks == 6
+        assert result_sequential.completed_tasks == 6
 
         # Parallel execution should be significantly faster
         # Independent tasks: 5 * 0.1s = 0.5s sequential, ~0.1s parallel
@@ -469,9 +470,9 @@ class TestPipelineAgentPerformance:
         execution_time = time.time() - start_time
 
         # Verify successful completion
-        assert result["status"] == "completed"
-        assert result["total_tasks"] == total_tasks
-        assert result["completed_tasks"] == total_tasks
+        assert result.status == AgentRunStatus.SUCCESS
+        assert result.total_tasks == total_tasks
+        assert result.completed_tasks == total_tasks
 
         # Execution should complete efficiently
         # With parallelism, should take roughly chain_length * 0.001 + 0.01 = ~0.03s
@@ -531,8 +532,8 @@ class TestPipelineAgentPerformance:
         final_memory = process.memory_info().rss
 
         # Verify execution succeeded
-        assert result["status"] == "completed"
-        assert result["completed_tasks"] == 50
+        assert result.status == AgentRunStatus.SUCCESS
+        assert result.completed_tasks == 50
 
         # Memory increase should be reasonable (less than 100MB)
         assert memory_increase < 100 * 1024 * 1024, (

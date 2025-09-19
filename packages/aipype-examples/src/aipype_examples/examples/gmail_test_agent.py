@@ -497,7 +497,7 @@ def main() -> None:
         agent.display_results()
 
         # Display final summary - access task result through agent context
-        if results and results.get("status") == "completed":
+        if results and results.is_success():
             # Get the final report task result from the agent's context
             final_report_result = agent.context.get_result("generate_report")
 

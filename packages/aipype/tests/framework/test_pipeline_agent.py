@@ -13,6 +13,7 @@ from aipype import (
     TaskDependency,
     DependencyType,
     TaskResult,
+    AgentRunStatus,
 )
 
 
@@ -88,11 +89,10 @@ class TestPipelineAgent:
         assert task3.run_called
 
         # Verify result structure
-        assert result["status"] == "completed"
-        assert result["agent_name"] == "test_agent"
-        assert result["total_tasks"] == 3
-        assert result["completed_tasks"] == 3
-        assert len(result["results"]) == 3
+        assert result.status == AgentRunStatus.SUCCESS
+        assert result.agent_name == "test_agent"
+        assert result.total_tasks == 3
+        assert result.completed_tasks == 3
 
     def test_agent_resolves_dependency_order(self) -> None:
         """Tasks execute in correct order based on dependencies."""
@@ -161,7 +161,7 @@ class TestPipelineAgent:
         assert article_task.execution_time < save_task.execution_time
 
         # Verify all tasks completed
-        assert result["completed_tasks"] == 5
+        assert result.completed_tasks == 5
 
     def test_agent_handles_task_failures_stop_on_failure(self) -> None:
         """Agent stops when tasks fail and stop_on_failure=True."""
@@ -210,10 +210,11 @@ class TestPipelineAgent:
         assert not task3.run_called  # Third task should not run due to failure
 
         # Verify result reflects partial completion
-        assert result["status"] == "completed"  # Agent completes even with failures
-        assert result["completed_tasks"] == 1  # Only first task succeeded
-        assert result["total_tasks"] == 3
-        assert len(result["results"]) == 2  # Results for tasks 1 and 2 (with error)
+        assert (
+            result.status == AgentRunStatus.PARTIAL
+        )  # Agent completes with partial success
+        assert result.completed_tasks == 1  # Only first task succeeded
+        assert result.total_tasks == 3
 
     def test_agent_handles_task_failures_continue_on_failure(self) -> None:
         """Agent continues when tasks fail and stop_on_failure=False."""
@@ -235,8 +236,7 @@ class TestPipelineAgent:
         assert task3.run_called
 
         # Verify result reflects mixed success/failure
-        assert result["completed_tasks"] == 2  # Tasks 1 and 3 succeeded
-        assert len(result["results"]) == 3  # All tasks have results (including errors)
+        assert result.completed_tasks == 2  # Tasks 1 and 3 succeeded
 
     def test_agent_supports_parallel_execution(self) -> None:
         """Independent tasks can run in parallel."""
@@ -256,7 +256,7 @@ class TestPipelineAgent:
         end_time = time.time()
 
         # Verify all tasks completed
-        assert result["completed_tasks"] == 3
+        assert result.completed_tasks == 3
 
         # Verify parallel execution (should be faster than sequential)
         # Sequential would take ~0.3s, parallel should take ~0.1s
@@ -410,10 +410,9 @@ class TestPipelineAgent:
         # Run with no tasks
         result = agent.run()
 
-        assert result["status"] == "completed"
-        assert result["total_tasks"] == 0
-        assert result["completed_tasks"] == 0
-        assert len(result["results"]) == 0
+        assert result.status == AgentRunStatus.SUCCESS
+        assert result.total_tasks == 0
+        assert result.completed_tasks == 0
 
     def test_agent_maintains_task_context(self) -> None:
         """Agent maintains and updates task context throughout execution."""

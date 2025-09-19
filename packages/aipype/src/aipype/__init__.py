@@ -11,6 +11,10 @@ from .task_result import (
     wrap_legacy_result,
     unwrap_to_legacy,
 )
+from .agent_run_result import (
+    AgentRunResult,
+    AgentRunStatus,
+)
 from .task_context import TaskContext
 from .task_dependencies import (
     TaskDependency,
@@ -85,6 +89,8 @@ __all__ = [
     "TaskStatus",
     "wrap_legacy_result",
     "unwrap_to_legacy",
+    "AgentRunResult",
+    "AgentRunStatus",
     "TaskContext",
     "TaskDependency",
     "DependencyType",
