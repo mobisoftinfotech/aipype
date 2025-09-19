@@ -1,4 +1,154 @@
-"""ContextualLLMTask - LLM task with context-aware prompt generation."""
+"""Advanced LLM task with context-aware prompts, tool calling, and template substitution.
+
+This module provides LLMTask, a sophisticated task for integrating Large Language Models
+into AI pipelines. It supports automatic prompt template substitution using dependency
+data, tool/function calling, multiple LLM providers, and comprehensive response handling.
+
+Key Features:
+    - **Template Substitution**: Dynamic prompt generation using ${variable} syntax
+    - **Tool Calling**: Function calling with automatic tool registration and execution
+    - **Multi-Provider**: Support for OpenAI, Anthropic, Ollama, and other LLM providers
+    - **Context Integration**: Automatic injection of dependency data into prompts
+    - **Response Handling**: Structured response parsing and error handling
+    - **Logging**: Optional detailed logging for debugging and monitoring
+
+### Template System
+
+LLMTask uses ${variable} syntax for dynamic prompt generation:
+
+```python
+task = LLMTask("summarize", {
+    "prompt": "Summarize these articles: ${articles}",
+    "context": "You are an expert ${domain} analyst",
+    "llm_provider": "openai",
+    "llm_model": "gpt-4"
+}, dependencies=[
+    TaskDependency("articles", "search.results", REQUIRED),
+    TaskDependency("domain", "config.analysis_domain", OPTIONAL, default_value="general")
+])
+```
+
+### Tool Calling
+
+Enable function calling with automatic tool management:
+
+```python
+@tool
+def search_web(query: str) -> Dict[str, Any]:
+    return {"results": web_search(query)}
+
+task = LLMTask("research", {
+    "prompt": "Research ${topic} and provide analysis",
+    "tools": [search_web],
+    "llm_provider": "openai",
+    "llm_model": "gpt-4"
+})
+```
+
+### Supported Providers
+
+- **OpenAI**: gpt-4, gpt-3.5-turbo, etc.
+- **Anthropic**: claude-3-opus, claude-3-sonnet, etc.
+- **Ollama**: Local models (llama2, mistral, etc.)
+- **Google**: gemini-pro, gemini-pro-vision
+- **Azure OpenAI**: Azure-hosted OpenAI models
+- **And many more via litellm**
+
+### Configuration Options
+
+**Core settings:**
+- llm_provider: Provider name (required)
+- llm_model: Model identifier (required)
+- prompt/prompt_template: Main prompt text with templates
+- temperature: Randomness control (0.0-2.0, default: 0.7)
+- max_tokens: Maximum response tokens (default: 1000)
+- timeout: Request timeout in seconds (default: 60)
+
+**Tool calling:**
+- tools: List of @tool decorated functions
+- tool_choice: "auto", "none", or specific tool name
+- parallel_tool_calls: Enable parallel tool execution
+- max_tool_execution_time: Tool timeout in seconds
+
+**Context and role:**
+- context: System/context message (supports templates)
+- role: User role description (supports templates)
+
+### Response Format
+
+LLMTask returns structured data including:
+
+- **content**: Generated text response
+- **usage**: Token usage statistics
+- **tool_calls**: List of executed tool calls (if any)
+- **model**: Model used for generation
+- **provider**: Provider used
+- **metadata**: Additional response information
+
+### Example Usage
+
+**Basic text generation:**
+
+```python
+task = LLMTask("generate", {
+    "prompt": "Write a brief summary about ${topic}",
+    "llm_provider": "openai",
+    "llm_model": "gpt-4",
+    "temperature": 0.3,
+    "max_tokens": 500
+})
+```
+
+**With dependencies and templates:**
+
+```python
+task = LLMTask("analyze", {
+    "prompt": "Analyze these search results about ${topic}: ${results}",
+    "context": "You are an expert ${field} researcher",
+    "llm_provider": "anthropic",
+    "llm_model": "claude-3-opus"
+}, dependencies=[
+    TaskDependency("topic", "input.topic", REQUIRED),
+    TaskDependency("results", "search.results", REQUIRED),
+    TaskDependency("field", "config.research_field", OPTIONAL, default_value="general")
+])
+```
+
+**With tool calling:**
+
+```python
+@tool
+def calculate(expression: str) -> float:
+    return eval(expression)  # Simple calculator
+
+task = LLMTask("math_helper", {
+    "prompt": "Help solve this math problem: ${problem}",
+    "tools": [calculate],
+    "llm_provider": "openai",
+    "llm_model": "gpt-4",
+    "tool_choice": "auto"
+})
+```
+
+### Error Handling
+
+LLMTask handles various error conditions gracefully:
+
+- API failures (network, authentication, rate limits)
+- Invalid model/provider combinations
+- Tool execution errors
+- Template substitution errors
+- Response parsing failures
+
+All errors are returned as TaskResult.failure() with detailed error messages
+and relevant metadata for debugging.
+
+See Also:
+    - BaseTask: Parent class for task implementation patterns
+    - TaskDependency: For injecting data into prompt templates
+    - @tool decorator: For creating tool functions
+    - litellm: Underlying LLM provider abstraction
+"""
 
 import re
 import os
@@ -29,7 +179,195 @@ class ChatMessage(TypedDict):
 
 
 class LLMTask(BaseTask):
-    """LLM task that can use context data in prompts via template substitution."""
+    """Advanced LLM integration task with template substitution and tool calling.
+
+    LLMTask provides sophisticated Large Language Model integration for AI pipelines.
+    It supports dynamic prompt generation through template substitution, automatic
+    function/tool calling, and seamless integration with multiple LLM providers.
+
+    The task automatically resolves template variables from dependency data and
+    manages the complete LLM interaction lifecycle including request formatting,
+    response parsing, tool execution, and error handling.
+
+    Core Capabilities:
+        - **Dynamic Prompts**: ${variable} template substitution from dependencies
+        - **Tool Integration**: Automatic function calling with @tool decorated functions
+        - **Multi-Provider**: Support for 50+ LLM providers via litellm
+        - **Response Processing**: Structured response parsing and validation
+        - **Error Recovery**: Graceful handling of API failures and timeouts
+        - **Usage Tracking**: Detailed token usage and cost monitoring
+
+    Template Substitution:
+        Templates use ${variable_name} syntax and are resolved from:
+        1. Task dependencies (via TaskDependency)
+        2. Task configuration values
+        3. Environment variables (as fallback)
+
+        Template fields support:
+        - prompt/prompt_template: Main user message
+        - context: System/context message
+        - role: User role description
+
+    Tool Calling Workflow:
+        1. Functions decorated with @tool are automatically registered
+        2. LLM decides which tools to call based on prompt
+        3. Tools execute with validated parameters
+        4. Results injected back into conversation
+        5. LLM continues with tool results
+
+### Provider Configuration
+
+Different providers require different configuration:
+
+**OpenAI:**
+
+```python
+{
+    "llm_provider": "openai",
+    "llm_model": "gpt-4",
+    "temperature": 0.7,
+    "max_tokens": 1000
+}
+```
+
+**Anthropic:**
+
+```python
+{
+    "llm_provider": "anthropic",
+    "llm_model": "claude-3-opus-20240229",
+    "temperature": 0.5,
+    "max_tokens": 2000
+}
+```
+
+**Ollama (local):**
+
+```python
+{
+    "llm_provider": "ollama",
+    "llm_model": "llama2",
+    "temperature": 0.8
+}
+```
+
+**Azure OpenAI:**
+
+```python
+{
+    "llm_provider": "azure",
+    "llm_model": "deployment-name",
+    "api_base": "https://your-resource.openai.azure.com/",
+    "api_version": "2023-05-15"
+}
+```
+
+### Response Structure
+
+Successful responses include:
+
+```python
+{
+    "content": "Generated text response",
+    "usage": {
+        "prompt_tokens": 150,
+        "completion_tokens": 300,
+        "total_tokens": 450
+    },
+    "tool_calls": [
+        {
+            "tool_name": "search_web",
+            "arguments": {"query": "AI trends"},
+            "result": {"results": [...]},
+            "success": True
+        }
+    ],
+    "model": "gpt-4",
+    "provider": "openai",
+    "metadata": {
+        "response_time": 2.34,
+        "template_variables": ["topic", "domain"]
+    }
+}
+```
+
+### Common Usage Patterns
+
+**Content generation with templates:**
+
+```python
+LLMTask("writer", {
+    "prompt": "Write a ${length} article about ${topic} for ${audience}",
+    "context": "You are an expert ${field} writer",
+    "llm_provider": "openai",
+    "llm_model": "gpt-4",
+    "temperature": 0.7
+}, dependencies=[
+    TaskDependency("topic", "input.topic", REQUIRED),
+    TaskDependency("length", "config.article_length", OPTIONAL, default_value="brief"),
+    TaskDependency("audience", "config.target_audience", REQUIRED),
+    TaskDependency("field", "config.expertise_field", REQUIRED)
+])
+```
+
+**Research with tool calling:**
+
+```python
+@tool
+def search_academic_papers(query: str, limit: int = 5) -> List[Dict]:
+    # Search implementation
+    return papers
+
+LLMTask("researcher", {
+    "prompt": "Research ${topic} and provide comprehensive analysis",
+    "tools": [search_academic_papers],
+    "llm_provider": "anthropic",
+    "llm_model": "claude-3-opus",
+    "tool_choice": "auto",
+    "max_tokens": 3000
+})
+```
+
+**Data analysis and reasoning:**
+
+```python
+LLMTask("analyzer", {
+    "prompt": "Analyze this data and provide insights: ${data}",
+    "context": "You are a data scientist specializing in ${domain}",
+    "llm_provider": "openai",
+    "llm_model": "gpt-4",
+    "temperature": 0.3,  # Lower temperature for analytical tasks
+    "max_tokens": 2000
+}, dependencies=[
+    TaskDependency("data", "processor.results", REQUIRED),
+    TaskDependency("domain", "config.analysis_domain", REQUIRED)
+])
+```
+
+### Error Handling
+
+Common failure scenarios and recovery:
+
+- **API Errors**: Network failures, authentication issues
+- **Rate Limits**: Automatic retry with exponential backoff
+- **Invalid Models**: Clear error messages for unsupported models
+- **Tool Failures**: Individual tool errors don't fail entire task
+- **Template Errors**: Missing variables result in clear error messages
+
+### Performance Considerations
+
+- Use appropriate max_tokens to control costs and latency
+- Lower temperature (0.1-0.3) for factual/analytical tasks
+- Higher temperature (0.7-1.0) for creative tasks
+- Consider model capabilities vs cost (gpt-3.5-turbo vs gpt-4)
+- Use tool_choice="none" to disable tool calling when not needed
+
+    See Also:
+        - @tool: For creating callable functions
+        - TaskDependency: For template variable injection
+        - litellm: Underlying provider abstraction
+        - Tool calling examples in the examples package
+    """
 
     REQUIRED_CONFIGS = ["llm_provider", "llm_model"]
     DEFAULT_TEMPERATURE = 0.7
@@ -42,17 +380,134 @@ class LLMTask(BaseTask):
         config: Optional[Dict[str, Any]] = None,
         dependencies: Optional[List[TaskDependency]] = None,
     ):
-        """Initialize contextual LLM task.
+        """Initialize an advanced LLM task with template and tool support.
+
+        Creates a new LLM task that can automatically substitute template variables
+        from dependencies, execute function calls, and interact with multiple LLM
+        providers. The task handles the complete LLM interaction lifecycle.
 
         Args:
-            name: Task name
-            config: Task configuration including prompt_template
-            dependencies: List of task dependencies
+            name: Unique identifier for this task within the pipeline. Used for
+                logging, dependency references, and result storage.
 
-        Additional config parameters:
-        - prompt_template: Template string with ${variable} placeholders (instead of prompt)
-        - context: System/context message (can also be a template)
-        - role: User role or persona description (can also be a template)
+            config: LLM configuration dictionary with the following keys:
+
+                **Required:**
+                - llm_provider (str): LLM provider name. Supported values include:
+                  "openai", "anthropic", "ollama", "azure", "google", "cohere", etc.
+                - llm_model (str): Model identifier specific to the provider:
+                  - OpenAI: "gpt-4", "gpt-3.5-turbo", "gpt-4-turbo-preview"
+                  - Anthropic: "claude-3-opus", "claude-3-sonnet", "claude-3-haiku"
+                  - Ollama: "llama2", "mistral", "codellama"
+                  - Google: "gemini-pro", "gemini-pro-vision"
+
+                **Prompt Configuration:**
+                - prompt OR prompt_template (str): Main user message with ${var} templates
+                - context (str, optional): System/context message (supports templates)
+                - role (str, optional): User role description (supports templates)
+
+                **Generation Parameters:**
+                - temperature (float, 0.0-2.0): Randomness control (default: 0.7)
+                - max_tokens (int): Maximum response tokens (default: 1000)
+                - timeout (float): Request timeout in seconds (default: 60)
+
+                **Tool Calling:**
+                - tools (List[Callable], optional): List of @tool decorated functions
+                - tool_choice (str, optional): "auto", "none", or specific tool name
+                - parallel_tool_calls (bool): Enable parallel tool execution (default: True)
+                - max_tool_execution_time (float): Tool timeout in seconds (default: 30)
+
+                **Provider-Specific:**
+                - api_key (str, optional): API key (can also use environment variables)
+                - api_base (str, optional): Custom API endpoint (for Azure, local deployments)
+                - api_version (str, optional): API version (for Azure OpenAI)
+
+            dependencies: List of TaskDependency objects for template variable injection.
+                Template variables in prompt, context, and role fields will be
+                automatically replaced with resolved dependency values.
+
+        Example:
+            Basic text generation:
+
+            ```python
+            LLMTask("summarizer", {
+                "prompt": "Summarize this text: ${content}",
+                "llm_provider": "openai",
+                "llm_model": "gpt-4",
+                "temperature": 0.3,
+                "max_tokens": 500
+            }, dependencies=[
+                TaskDependency("content", "input.text", REQUIRED)
+            ])
+            ```
+
+            Advanced with tools and context:
+
+            ```python
+            @tool
+            def web_search(query: str) -> Dict[str, Any]:
+                return {"results": search_engine.search(query)}
+
+            LLMTask("researcher", {
+                "prompt": "Research ${topic} and provide analysis",
+                "context": "You are an expert ${field} researcher with access to web search",
+                "llm_provider": "anthropic",
+                "llm_model": "claude-3-opus",
+                "tools": [web_search],
+                "tool_choice": "auto",
+                "temperature": 0.5,
+                "max_tokens": 3000
+            }, dependencies=[
+                TaskDependency("topic", "config.research_topic", REQUIRED),
+                TaskDependency("field", "config.expertise_field", REQUIRED)
+            ])
+            ```
+
+            Local model with Ollama:
+
+            ```python
+            LLMTask("local_chat", {
+                "prompt": "Help with this question: ${question}",
+                "llm_provider": "ollama",
+                "llm_model": "llama2",
+                "temperature": 0.8,
+                "max_tokens": 2000
+            })
+            ```
+
+        Template Variables:
+            Variables in prompt, context, and role fields use ${variable_name} syntax.
+            Resolution order:
+            1. Dependency values (from TaskDependency objects)
+            2. Direct config values
+            3. Environment variables
+            4. Error if required variable not found
+
+        Tool Integration:
+            Functions decorated with @tool are automatically:
+            1. Registered with the LLM provider
+            2. Made available to the model during generation
+            3. Executed when called by the model
+            4. Results injected back into the conversation
+
+        Error Handling:
+            Configuration errors are caught during validation:
+            - Missing required fields (llm_provider, llm_model)
+            - Invalid parameter ranges (temperature, max_tokens)
+            - Unsupported tool configurations
+            - Provider-specific validation
+
+        Environment Variables:
+            API keys can be provided via environment variables:
+            - OPENAI_API_KEY for OpenAI
+            - ANTHROPIC_API_KEY for Anthropic
+            - GOOGLE_API_KEY for Google
+            - Etc.
+
+        See Also:
+            - @tool: For creating callable functions
+            - TaskDependency: For template variable injection
+            - Provider documentation for model-specific capabilities
         """
         super().__init__(name, config, dependencies)
         self.validation_rules = {

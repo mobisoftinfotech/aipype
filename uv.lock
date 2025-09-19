@@ -105,7 +105,7 @@ wheels = [
 
 [[package]]
 name = "aipype"
-version = "0.1.0a2"
+version = "0.1.0a3"
 source = { editable = "packages/aipype" }
 dependencies = [
     { name = "beautifulsoup4" },
@@ -138,7 +138,7 @@ requires-dist = [
 
 [[package]]
 name = "aipype-examples"
-version = "0.1.0a2"
+version = "0.1.0a3"
 source = { editable = "packages/aipype-examples" }
 dependencies = [
     { name = "aipype" },
@@ -165,7 +165,7 @@ test = [
 
 [[package]]
 name = "aipype-extras"
-version = "0.1.0a2"
+version = "0.1.0a3"
 source = { editable = "packages/aipype-extras" }
 dependencies = [
     { name = "aipype" },
@@ -192,7 +192,7 @@ test = [
 
 [[package]]
 name = "aipype-g"
-version = "0.1.0a2"
+version = "0.1.0a3"
 source = { editable = "packages/aipype-g" }
 dependencies = [
     { name = "aipype" },
