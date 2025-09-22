@@ -247,6 +247,7 @@ However, transform functions should be thread-safe if used in parallel execution
 
             source_path: Dot-notation path to the source data in TaskContext.
                 Format: "source_task_name.field_path". Examples:
+
                 * "search.results" - Access results field from search task
                 * "fetch.data.articles[].content" - Extract content from article array
                 * "config.api.endpoints.primary" - Access nested configuration

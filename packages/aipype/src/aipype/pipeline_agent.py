@@ -402,6 +402,7 @@ run() returns AgentRunResult with:
             * TaskDependency: Declarative dependency specification
             * TaskContext: Shared data store for inter-task communication
             * AgentRunResult: Standardized execution result format
+        
         """
         self.name = name
         self.config = config or {}
@@ -436,60 +437,7 @@ run() returns AgentRunResult with:
         and configuring tasks with their dependencies. Tasks are automatically
         organized into execution phases based on their dependency relationships.
 
-        Returns:
-            List of configured BaseTask instances that define the workflow.
-            Tasks should include:
-            * Unique names for identification and dependency references
-            * Configuration dictionaries with required parameters
-            * TaskDependency objects linking tasks together
-
-        Example:
-            Basic search and summarize workflow::
-
-                def setup_tasks(self):
-                    return [
-                        SearchTask("search", {
-                            "query": self.config.get("topic", ""),
-                            "max_results": 5
-                        }),
-                        LLMTask("summarize", {
-                            "prompt": "Summarize these articles: ${articles}",
-                            "llm_provider": "openai",
-                            "llm_model": "gpt-4"
-                        }, dependencies=[
-                            TaskDependency("articles", "search.results", REQUIRED)
-                        ])
-                    ]
-
-            Complex workflow with conditional logic::
-
-                def setup_tasks(self):
-                    return [
-                        SearchTask("search", {"query": "AI news"}),
-                        TransformTask("filter", {
-                            "transform_function": filter_recent_articles,
-                            "input_field": "results"
-                        }, dependencies=[
-                            TaskDependency("results", "search.results", REQUIRED)
-                        ]),
-                        ConditionalTask("quality_check", {
-                            "condition_function": lambda articles: len(articles) >= 3,
-                            "condition_inputs": ["filtered_articles"],
-                            "action_function": log_action("Quality check passed"),
-                            "else_function": log_action("Insufficient articles")
-                        }, dependencies=[
-                            TaskDependency("filtered_articles", "filter.result", REQUIRED)
-                        ]),
-                        LLMTask("summarize", {
-                            "prompt": "Create summary from: ${content}",
-                            "llm_provider": "openai"
-                        }, dependencies=[
-                            TaskDependency("content", "filter.result", REQUIRED)
-                        ])
-                    ]
-
         Task Naming:
-
             * Use descriptive names that indicate the task's purpose
             * Names must be unique within the agent
             * Use snake_case for consistency
@@ -497,14 +445,10 @@ run() returns AgentRunResult with:
             * **Avoid**: "task1", "t", "process"
 
         Dependency Design:
-
             * Required dependencies must be satisfied for task to run
             * Optional dependencies use default values if source unavailable
             * Circular dependencies will cause pipeline execution to fail
             * Use transform_func in dependencies for data preprocessing
-
-        Raises:
-            NotImplementedError: Must be implemented by subclasses
 
         Note:
             This method is called automatically during agent initialization.
@@ -515,6 +459,61 @@ run() returns AgentRunResult with:
             * TaskDependency: For creating task dependencies
             * BaseTask subclasses: LLMTask, SearchTask, ConditionalTask, etc.
             * Task-specific documentation for configuration options
+
+        Returns:
+            List[BaseTask]:
+                List of configured BaseTask instances that define the workflow.
+
+        Example:
+            Basic search and summarize workflow::
+                .. code-block:: python
+
+                    def setup_tasks(self):
+                        return [
+                            SearchTask("search", {
+                                "query": self.config.get("topic", ""),
+                                "max_results": 5
+                            }),
+                            LLMTask("summarize", {
+                                "prompt": "Summarize these articles: ${articles}",
+                                "llm_provider": "openai",
+                                "llm_model": "gpt-4"
+                            }, dependencies=[
+                                TaskDependency("articles", "search.results", REQUIRED)
+                            ])
+                        ]
+
+            Complex workflow with conditional logic::
+                .. code-block:: python
+
+                    def setup_tasks(self):
+                        return [
+                            SearchTask("search", {"query": "AI news"}),
+                            TransformTask("filter", {
+                                "transform_function": filter_recent_articles,
+                                "input_field": "results"
+                            }, dependencies=[
+                                TaskDependency("results", "search.results", REQUIRED)
+                            ]),
+                            ConditionalTask("quality_check", {
+                                "condition_function": lambda articles: len(articles) >= 3,
+                                "condition_inputs": ["filtered_articles"],
+                                "action_function": log_action("Quality check passed"),
+                                "else_function": log_action("Insufficient articles")
+                            }, dependencies=[
+                                TaskDependency("filtered_articles", "filter.result", REQUIRED)
+                            ]),
+                            LLMTask("summarize", {
+                                "prompt": "Create summary from: ${content}",
+                                "llm_provider": "openai"
+                            }, dependencies=[
+                                TaskDependency("content", "filter.result", REQUIRED)
+                            ])
+                        ]
+
+        Raises:
+            NotImplementedError: Must be implemented by subclasses
+
         """
         raise NotImplementedError("Subclasses must implement setup_tasks()")
 
@@ -1143,7 +1142,7 @@ the pipeline is handled internally with ThreadPoolExecutor.
                 # Check for direct nested data in known keys
                 elif "result" in result and isinstance(result["result"], dict):
                     # Task result data structures are dynamic based on task implementations
-                    data: dict[str, Any] = result["result"]  # pyright: ignore[reportUnknownVariableType]
+                    data = result["result"]  # pyright: ignore[reportUnknownVariableType]
 
                 # Show content preview if available
                 if "content" in data:

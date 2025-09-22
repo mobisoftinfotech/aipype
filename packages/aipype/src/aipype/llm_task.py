@@ -392,6 +392,7 @@ See Also:
                 - llm_provider (str): LLM provider name. Supported values include:
                   "openai", "anthropic", "ollama", "azure", "google", "cohere", etc.
                 - llm_model (str): Model identifier specific to the provider:
+
                   - OpenAI: "gpt-4", "gpt-3.5-turbo", "gpt-4-turbo-preview"
                   - Anthropic: "claude-3-opus", "claude-3-sonnet", "claude-3-haiku"
                   - Ollama: "llama2", "mistral", "codellama"
