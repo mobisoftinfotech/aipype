@@ -16,34 +16,34 @@ Key Features:
 
 LLMTask uses ${variable} syntax for dynamic prompt generation:
 
-```python
-task = LLMTask("summarize", {
-    "prompt": "Summarize these articles: ${articles}",
-    "context": "You are an expert ${domain} analyst",
-    "llm_provider": "openai",
-    "llm_model": "gpt-4"
-}, dependencies=[
-    TaskDependency("articles", "search.results", REQUIRED),
-    TaskDependency("domain", "config.analysis_domain", OPTIONAL, default_value="general")
-])
-```
+.. code-block:: python
+
+    task = LLMTask("summarize", {
+        "prompt": "Summarize these articles: ${articles}",
+        "context": "You are an expert ${domain} analyst",
+        "llm_provider": "openai",
+        "llm_model": "gpt-4"
+    }, dependencies=[
+        TaskDependency("articles", "search.results", REQUIRED),
+        TaskDependency("domain", "config.analysis_domain", OPTIONAL, default_value="general")
+    ])
 
 ### Tool Calling
 
 Enable function calling with automatic tool management:
 
-```python
-@tool
-def search_web(query: str) -> Dict[str, Any]:
-    return {"results": web_search(query)}
+.. code-block:: python
 
-task = LLMTask("research", {
-    "prompt": "Research ${topic} and provide analysis",
-    "tools": [search_web],
-    "llm_provider": "openai",
-    "llm_model": "gpt-4"
-})
-```
+    @tool
+    def search_web(query: str) -> Dict[str, Any]:
+        return {"results": web_search(query)}
+
+    task = LLMTask("research", {
+        "prompt": "Research ${topic} and provide analysis",
+        "tools": [search_web],
+        "llm_provider": "openai",
+        "llm_model": "gpt-4"
+    })
 
 ### Supported Providers
 
@@ -89,46 +89,46 @@ LLMTask returns structured data including:
 
 **Basic text generation:**
 
-```python
-task = LLMTask("generate", {
-    "prompt": "Write a brief summary about ${topic}",
-    "llm_provider": "openai",
-    "llm_model": "gpt-4",
-    "temperature": 0.3,
-    "max_tokens": 500
-})
-```
+.. code-block:: python
+
+    task = LLMTask("generate", {
+        "prompt": "Write a brief summary about ${topic}",
+        "llm_provider": "openai",
+        "llm_model": "gpt-4",
+        "temperature": 0.3,
+        "max_tokens": 500
+    })
 
 **With dependencies and templates:**
 
-```python
-task = LLMTask("analyze", {
-    "prompt": "Analyze these search results about ${topic}: ${results}",
-    "context": "You are an expert ${field} researcher",
-    "llm_provider": "anthropic",
-    "llm_model": "claude-3-opus"
-}, dependencies=[
-    TaskDependency("topic", "input.topic", REQUIRED),
-    TaskDependency("results", "search.results", REQUIRED),
-    TaskDependency("field", "config.research_field", OPTIONAL, default_value="general")
-])
-```
+.. code-block:: python
+
+    task = LLMTask("analyze", {
+        "prompt": "Analyze these search results about ${topic}: ${results}",
+        "context": "You are an expert ${field} researcher",
+        "llm_provider": "anthropic",
+        "llm_model": "claude-3-opus"
+    }, dependencies=[
+        TaskDependency("topic", "input.topic", REQUIRED),
+        TaskDependency("results", "search.results", REQUIRED),
+        TaskDependency("field", "config.research_field", OPTIONAL, default_value="general")
+    ])
 
 **With tool calling:**
 
-```python
-@tool
-def calculate(expression: str) -> float:
-    return eval(expression)  # Simple calculator
+.. code-block:: python
 
-task = LLMTask("math_helper", {
-    "prompt": "Help solve this math problem: ${problem}",
-    "tools": [calculate],
-    "llm_provider": "openai",
-    "llm_model": "gpt-4",
-    "tool_choice": "auto"
-})
-```
+    @tool
+    def calculate(expression: str) -> float:
+        return eval(expression)  # Simple calculator
+
+    task = LLMTask("math_helper", {
+        "prompt": "Help solve this math problem: ${problem}",
+        "tools": [calculate],
+        "llm_provider": "openai",
+        "llm_model": "gpt-4",
+        "tool_choice": "auto"
+    })
 
 ### Error Handling
 
@@ -266,82 +266,83 @@ Different providers require different configuration:
 
 Successful responses include:
 
-```python
-{
-    "content": "Generated text response",
-    "usage": {
-        "prompt_tokens": 150,
-        "completion_tokens": 300,
-        "total_tokens": 450
-    },
-    "tool_calls": [
-        {
-            "tool_name": "search_web",
-            "arguments": {"query": "AI trends"},
-            "result": {"results": [...]},
-            "success": True
+.. code-block:: python
+
+    {
+        "content": "Generated text response",
+        "usage": {
+            "prompt_tokens": 150,
+            "completion_tokens": 300,
+            "total_tokens": 450
+        },
+        "tool_calls": [
+            {
+                "tool_name": "search_web",
+                "arguments": {"query": "AI trends"},
+                "result": {"results": [...]},
+                "success": True
+            }
+        ],
+        "model": "gpt-4",
+        "provider": "openai",
+        "metadata": {
+            "response_time": 2.34,
+            "template_variables": ["topic", "domain"]
         }
-    ],
-    "model": "gpt-4",
-    "provider": "openai",
-    "metadata": {
-        "response_time": 2.34,
-        "template_variables": ["topic", "domain"]
     }
-}
-```
 
 ### Common Usage Patterns
 
 **Content generation with templates:**
 
-```python
-LLMTask("writer", {
-    "prompt": "Write a ${length} article about ${topic} for ${audience}",
-    "context": "You are an expert ${field} writer",
-    "llm_provider": "openai",
-    "llm_model": "gpt-4",
-    "temperature": 0.7
-}, dependencies=[
-    TaskDependency("topic", "input.topic", REQUIRED),
-    TaskDependency("length", "config.article_length", OPTIONAL, default_value="brief"),
-    TaskDependency("audience", "config.target_audience", REQUIRED),
-    TaskDependency("field", "config.expertise_field", REQUIRED)
-])
-```
+.. code-block:: python
+
+    LLMTask("writer", {
+        "prompt": "Write a ${length} article about ${topic} for ${audience}",
+        "context": "You are an expert ${field} writer",
+        "llm_provider": "openai",
+        "llm_model": "gpt-4",
+        "temperature": 0.7
+    }, dependencies=[
+        TaskDependency("topic", "input.topic", REQUIRED),
+        TaskDependency("length", "config.article_length", OPTIONAL, default_value="brief"),
+        TaskDependency("audience", "config.target_audience", REQUIRED),
+        TaskDependency("field", "config.expertise_field", REQUIRED)
+    ])
 
 **Research with tool calling:**
 
-```python
-@tool
-def search_academic_papers(query: str, limit: int = 5) -> List[Dict]:
-    # Search implementation
-    return papers
+.. code-block:: python
 
-LLMTask("researcher", {
-    "prompt": "Research ${topic} and provide comprehensive analysis",
-    "tools": [search_academic_papers],
-    "llm_provider": "anthropic",
-    "llm_model": "claude-3-opus",
-    "tool_choice": "auto",
-    "max_tokens": 3000
-})
-```
+    @tool
+    def search_academic_papers(query: str, limit: int = 5) -> List[Dict]:
+        # Search implementation
+        return papers
+
+    LLMTask("researcher", {
+        "prompt": "Research ${topic} and provide comprehensive analysis",
+        "tools": [search_academic_papers],
+        "llm_provider": "anthropic",
+        "llm_model": "claude-3-opus",
+        "tool_choice": "auto",
+        "max_tokens": 3000
+    })
 
 **Data analysis and reasoning:**
 
-```python
-LLMTask("analyzer", {
-    "prompt": "Analyze this data and provide insights: ${data}",
-    "context": "You are a data scientist specializing in ${domain}",
-    "llm_provider": "openai",
-    "llm_model": "gpt-4",
-    "temperature": 0.3,  # Lower temperature for analytical tasks
-    "max_tokens": 2000
-}, dependencies=[
-    TaskDependency("data", "processor.results", REQUIRED),
-    TaskDependency("domain", "config.analysis_domain", REQUIRED)
-])
+.. code-block:: python
+
+    LLMTask("analyzer", {
+        "prompt": "Analyze this data and provide insights: ${data}",
+        "context": "You are a data scientist specializing in ${domain}",
+        "llm_provider": "openai",
+        "llm_model": "gpt-4",
+        "temperature": 0.3,  # Lower temperature for analytical tasks
+        "max_tokens": 2000
+    }, dependencies=[
+        TaskDependency("data", "processor.results", REQUIRED),
+        TaskDependency("domain", "config.analysis_domain", REQUIRED)
+    ])
 ```
 
 ### Error Handling

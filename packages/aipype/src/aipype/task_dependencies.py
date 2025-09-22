@@ -21,20 +21,20 @@ Dependency Flow:
 
 ### Quick Example
 
-```python
-# Search task produces results
-search_task = SearchTask("search", {"query": "AI news"})
+.. code-block:: python
 
-# LLM task depends on search results
-llm_task = LLMTask("summarize", {
-    "prompt": "Summarize: ${articles}",
-    "llm_provider": "openai"
-}, dependencies=[
-    TaskDependency("articles", "search.results", REQUIRED)
-])
+    # Search task produces results
+    search_task = SearchTask("search", {"query": "AI news"})
 
-# Pipeline automatically resolves search.results -> articles
-```
+    # LLM task depends on search results
+    llm_task = LLMTask("summarize", {
+        "prompt": "Summarize: ${articles}",
+        "llm_provider": "openai"
+    }, dependencies=[
+        TaskDependency("articles", "search.results", REQUIRED)
+    ])
+
+    # Pipeline automatically resolves search.results -> articles
 
 ### Path Syntax
 
@@ -49,14 +49,14 @@ Dependencies use dot notation to access nested data:
 
 Use transform_func to preprocess dependency data:
 
-```python
-TaskDependency(
-    "urls",
-    "search.results",
-    REQUIRED,
-    transform_func=lambda results: [r['url'] for r in results]
-)
-```
+.. code-block:: python
+
+    TaskDependency(
+        "urls",
+        "search.results",
+        REQUIRED,
+        transform_func=lambda results: [r['url'] for r in results]
+    )
 
 ### Dependency Types
 
@@ -90,13 +90,13 @@ class DependencyType(Enum):
 
 ### Example
 
-```python
-# Required dependency - task fails if search_task not available
-TaskDependency("query_results", "search_task.results", REQUIRED)
+.. code-block:: python
 
-# Optional dependency - uses default if config_task unavailable
-TaskDependency("settings", "config_task.options", OPTIONAL, default_value={})
-```
+    # Required dependency - task fails if search_task not available
+    TaskDependency("query_results", "search_task.results", REQUIRED)
+
+    # Optional dependency - uses default if config_task unavailable
+    TaskDependency("settings", "config_task.options", OPTIONAL, default_value={})
     """
 
     REQUIRED = "required"
@@ -132,69 +132,69 @@ class TaskDependency:
 
 Optional preprocessing of resolved data before injection:
 
-```python
-def extract_titles(articles):
-    return [article.get('title', 'Untitled') for article in articles]
+.. code-block:: python
 
-TaskDependency(
-    "titles",
-    "search.results",
-    REQUIRED,
-    transform_func=extract_titles
-)
-```
+    def extract_titles(articles):
+        return [article.get('title', 'Untitled') for article in articles]
+
+    TaskDependency(
+        "titles",
+        "search.results",
+        REQUIRED,
+        transform_func=extract_titles
+    )
 
 ### Common Patterns
 
 **Basic data passing:**
 
-```python
-TaskDependency("search_results", "search_task.results", REQUIRED)
-```
+.. code-block:: python
+
+    TaskDependency("search_results", "search_task.results", REQUIRED)
 
 **Data transformation:**
 
-```python
-TaskDependency(
-    "article_urls",
-    "search_task.results",
-    REQUIRED,
-    transform_func=lambda results: [r['url'] for r in results]
-)
-```
+.. code-block:: python
+
+    TaskDependency(
+        "article_urls",
+        "search_task.results",
+        REQUIRED,
+        transform_func=lambda results: [r['url'] for r in results]
+    )
 
 **Optional configuration:**
 
-```python
-TaskDependency(
-    "processing_options",
-    "config_task.settings",
-    OPTIONAL,
-    default_value={"batch_size": 100, "timeout": 30}
-)
-```
+.. code-block:: python
+
+    TaskDependency(
+        "processing_options",
+        "config_task.settings",
+        OPTIONAL,
+        default_value={"batch_size": 100, "timeout": 30}
+    )
 
 **Nested data access:**
 
-```python
-TaskDependency("api_endpoint", "config_task.api.endpoints.primary", REQUIRED)
-```
+.. code-block:: python
+
+    TaskDependency("api_endpoint", "config_task.api.endpoints.primary", REQUIRED)
 
 **Complex transformation:**
 
-```python
-def combine_and_filter(search_results):
-    # Filter recent articles and combine text
-    recent = [r for r in search_results if is_recent(r)]
-    return ' '.join(r.get('content', '') for r in recent)
+.. code-block:: python
 
-TaskDependency(
-    "combined_content",
-    "search_task.results",
-    REQUIRED,
-    transform_func=combine_and_filter
-)
-```
+    def combine_and_filter(search_results):
+        # Filter recent articles and combine text
+        recent = [r for r in search_results if is_recent(r)]
+        return ' '.join(r.get('content', '') for r in recent)
+
+    TaskDependency(
+        "combined_content",
+        "search_task.results",
+        REQUIRED,
+        transform_func=combine_and_filter
+    )
 
 ### Error Handling
 
@@ -285,37 +285,37 @@ However, transform functions should be thread-safe if used in parallel execution
 
 **Basic dependency:**
 
-```python
-TaskDependency(
-    name="search_results",
-    source_path="web_search.results",
-    dependency_type=DependencyType.REQUIRED
-)
-```
+.. code-block:: python
+
+    TaskDependency(
+        name="search_results",
+        source_path="web_search.results",
+        dependency_type=DependencyType.REQUIRED
+    )
 
 **Transformed dependency:**
 
-```python
-TaskDependency(
-    name="article_urls",
-    source_path="search.results",
-    dependency_type=DependencyType.REQUIRED,
-    transform_func=lambda results: [r['url'] for r in results],
-    description="Extract URLs from search results for fetching"
-)
-```
+.. code-block:: python
+
+    TaskDependency(
+        name="article_urls",
+        source_path="search.results",
+        dependency_type=DependencyType.REQUIRED,
+        transform_func=lambda results: [r['url'] for r in results],
+        description="Extract URLs from search results for fetching"
+    )
 
 **Optional dependency with default:**
 
-```python
-TaskDependency(
-    name="processing_config",
-    source_path="config_loader.settings",
-    dependency_type=DependencyType.OPTIONAL,
-    default_value={"batch_size": 100, "parallel": True},
-    description="Processing configuration with sensible defaults"
-)
-```
+.. code-block:: python
+
+    TaskDependency(
+        name="processing_config",
+        source_path="config_loader.settings",
+        dependency_type=DependencyType.OPTIONAL,
+        default_value={"batch_size": 100, "parallel": True},
+        description="Processing configuration with sensible defaults"
+    )
 
         Raises:
             ValueError: If name is empty, source_path is empty, or source_path

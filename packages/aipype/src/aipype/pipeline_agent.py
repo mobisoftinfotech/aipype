@@ -13,24 +13,24 @@ Key Concepts:
 
 ### Quick Example
 
-```python
-class ArticleWriterAgent(PipelineAgent):
-    def setup_tasks(self):
-        return [
-            SearchTask("search", {"query": "AI trends", "max_results": 5}),
-            LLMTask("summarize", {
-                "prompt": "Summarize: ${content}",
-                "llm_provider": "openai",
-                "llm_model": "gpt-4"
-            }, dependencies=[
-                TaskDependency("content", "search.results", REQUIRED)
-            ])
-        ]
+.. code-block:: python
 
-agent = ArticleWriterAgent("writer", {})
-result = agent.run()
-print(f"Status: {result.status}, Tasks: {result.completed_tasks}/{result.total_tasks}")
-```
+    class ArticleWriterAgent(PipelineAgent):
+        def setup_tasks(self):
+            return [
+                SearchTask("search", {"query": "AI trends", "max_results": 5}),
+                LLMTask("summarize", {
+                    "prompt": "Summarize: ${content}",
+                    "llm_provider": "openai",
+                    "llm_model": "gpt-4"
+                }, dependencies=[
+                    TaskDependency("content", "search.results", REQUIRED)
+                ])
+            ]
+
+    agent = ArticleWriterAgent("writer", {})
+    result = agent.run()
+    print(f"Status: {result.status}, Tasks: {result.completed_tasks}/{result.total_tasks}")
 
 ### Execution Flow
 
@@ -276,53 +276,53 @@ class PipelineAgent:
 
 **Basic agent implementation:**
 
-```python
-class DataProcessorAgent(PipelineAgent):
-    def setup_tasks(self):
-        return [
-            SearchTask("gather_data", {
-                "query": self.config.get("search_query", ""),
-                "max_results": 10
-            }),
-            TransformTask("process_data", {
-                "transform_function": process_search_results,
-                "input_field": "results"
-            }, dependencies=[
-                TaskDependency("results", "gather_data.results", REQUIRED)
-            ]),
-            FileSaveTask("save_results", {
-                "file_path": "/tmp/results.json"
-            }, dependencies=[
-                TaskDependency("data", "process_data.result", REQUIRED)
-            ])
-        ]
+.. code-block:: python
 
-# Usage
-agent = DataProcessorAgent("processor", {
-    "search_query": "machine learning trends",
-    "enable_parallel": True
-})
-result = agent.run()
+    class DataProcessorAgent(PipelineAgent):
+        def setup_tasks(self):
+            return [
+                SearchTask("gather_data", {
+                    "query": self.config.get("search_query", ""),
+                    "max_results": 10
+                }),
+                TransformTask("process_data", {
+                    "transform_function": process_search_results,
+                    "input_field": "results"
+                }, dependencies=[
+                    TaskDependency("results", "gather_data.results", REQUIRED)
+                ]),
+                FileSaveTask("save_results", {
+                    "file_path": "/tmp/results.json"
+                }, dependencies=[
+                    TaskDependency("data", "process_data.result", REQUIRED)
+                ])
+            ]
 
-if result.is_success():
-    print(f"Processed {result.completed_tasks} tasks successfully")
-    # Access individual task results
-    search_result = agent.context.get_result("gather_data")
-    processed_data = agent.context.get_result("process_data")
-else:
-    print(f"Pipeline failed: {result.error_message}")
-```
+    # Usage
+    agent = DataProcessorAgent("processor", {
+        "search_query": "machine learning trends",
+        "enable_parallel": True
+    })
+    result = agent.run()
+
+    if result.is_success():
+        print(f"Processed {result.completed_tasks} tasks successfully")
+        # Access individual task results
+        search_result = agent.context.get_result("gather_data")
+        processed_data = agent.context.get_result("process_data")
+    else:
+        print(f"Pipeline failed: {result.error_message}")
 
 **Advanced configuration:**
 
-```python
-agent = DataProcessorAgent("processor", {
-    "search_query": "AI research",
-    "enable_parallel": False,  # Sequential execution
-    "stop_on_failure": False,  # Continue despite failures
-    "max_parallel_tasks": 10   # Higher concurrency
-})
-```
+.. code-block:: python
+
+    agent = DataProcessorAgent("processor", {
+        "search_query": "AI research",
+        "enable_parallel": False,  # Sequential execution
+        "stop_on_failure": False,  # Continue despite failures
+        "max_parallel_tasks": 10   # Higher concurrency
+    })
 
 ### Return Values
 
@@ -387,14 +387,14 @@ run() returns AgentRunResult with:
 
 ### Example
 
-```python
-agent = MyAgent("data_processor", {
-    "enable_parallel": True,
-    "max_parallel_tasks": 3,
-    "input_file": "data.csv"
-})
-print(f"Agent {agent.name} has {len(agent.tasks)} tasks")
-```
+.. code-block:: python
+
+    agent = MyAgent("data_processor", {
+        "enable_parallel": True,
+        "max_parallel_tasks": 3,
+        "input_file": "data.csv"
+    })
+    print(f"Agent {agent.name} has {len(agent.tasks)} tasks")
 
         Note:
             The agent automatically calls setup_tasks() during initialization.
@@ -445,51 +445,51 @@ print(f"Agent {agent.name} has {len(agent.tasks)} tasks")
 
 **Basic search and summarize workflow:**
 
-```python
-def setup_tasks(self):
-    return [
-        SearchTask("search", {
-            "query": self.config.get("topic", ""),
-            "max_results": 5
-        }),
-        LLMTask("summarize", {
-            "prompt": "Summarize these articles: ${articles}",
-            "llm_provider": "openai",
-            "llm_model": "gpt-4"
-        }, dependencies=[
-            TaskDependency("articles", "search.results", REQUIRED)
-        ])
-    ]
-```
+.. code-block:: python
+
+    def setup_tasks(self):
+        return [
+            SearchTask("search", {
+                "query": self.config.get("topic", ""),
+                "max_results": 5
+            }),
+            LLMTask("summarize", {
+                "prompt": "Summarize these articles: ${articles}",
+                "llm_provider": "openai",
+                "llm_model": "gpt-4"
+            }, dependencies=[
+                TaskDependency("articles", "search.results", REQUIRED)
+            ])
+        ]
 
 **Complex workflow with conditional logic:**
 
-```python
-def setup_tasks(self):
-    return [
-        SearchTask("search", {"query": "AI news"}),
-        TransformTask("filter", {
-            "transform_function": filter_recent_articles,
-            "input_field": "results"
-        }, dependencies=[
-            TaskDependency("results", "search.results", REQUIRED)
-        ]),
-        ConditionalTask("quality_check", {
-            "condition_function": lambda articles: len(articles) >= 3,
-            "condition_inputs": ["filtered_articles"],
-            "action_function": log_action("Quality check passed"),
-            "else_function": log_action("Insufficient articles")
-        }, dependencies=[
-            TaskDependency("filtered_articles", "filter.result", REQUIRED)
-        ]),
-        LLMTask("summarize", {
-            "prompt": "Create summary from: ${content}",
-            "llm_provider": "openai"
-        }, dependencies=[
-            TaskDependency("content", "filter.result", REQUIRED)
-        ])
-    ]
-```
+.. code-block:: python
+
+    def setup_tasks(self):
+        return [
+            SearchTask("search", {"query": "AI news"}),
+            TransformTask("filter", {
+                "transform_function": filter_recent_articles,
+                "input_field": "results"
+            }, dependencies=[
+                TaskDependency("results", "search.results", REQUIRED)
+            ]),
+            ConditionalTask("quality_check", {
+                "condition_function": lambda articles: len(articles) >= 3,
+                "condition_inputs": ["filtered_articles"],
+                "action_function": log_action("Quality check passed"),
+                "else_function": log_action("Insufficient articles")
+            }, dependencies=[
+                TaskDependency("filtered_articles", "filter.result", REQUIRED)
+            ]),
+            LLMTask("summarize", {
+                "prompt": "Create summary from: ${content}",
+                "llm_provider": "openai"
+            }, dependencies=[
+                TaskDependency("content", "filter.result", REQUIRED)
+            ])
+        ]
 
 ### Task Naming
 
@@ -597,36 +597,36 @@ def setup_tasks(self):
 
 **Basic execution and result checking:**
 
-```python
-agent = MyAgent("processor", config)
-result = agent.run()
+.. code-block:: python
 
-if result.is_success():
-    print(f"All {result.completed_tasks} tasks completed successfully")
+    agent = MyAgent("processor", config)
+    result = agent.run()
 
-    # Access individual task results
-    search_data = agent.context.get_result("search_task")
-    processed_data = agent.context.get_result("process_task")
+    if result.is_success():
+        print(f"All {result.completed_tasks} tasks completed successfully")
 
-elif result.is_partial():
-    print(f"Partial success: {result.completed_tasks}/{result.total_tasks}")
-    print(f"Failed tasks: {result.failed_tasks}")
+        # Access individual task results
+        search_data = agent.context.get_result("search_task")
+        processed_data = agent.context.get_result("process_task")
 
-else:  # result.is_error()
-    print(f"Pipeline failed: {result.error_message}")
-```
+    elif result.is_partial():
+        print(f"Partial success: {result.completed_tasks}/{result.total_tasks}")
+        print(f"Failed tasks: {result.failed_tasks}")
+
+    else:  # result.is_error()
+        print(f"Pipeline failed: {result.error_message}")
 
 **Performance monitoring:**
 
-```python
-result = agent.run()
-print(f"Execution time: {result.execution_time:.2f}s")
-print(f"Phases used: {result.total_phases}")
+.. code-block:: python
 
-# Check if parallel execution was effective
-if result.total_phases < len(agent.tasks):
-    print("Parallel execution optimized the pipeline")
-```
+    result = agent.run()
+    print(f"Execution time: {result.execution_time:.2f}s")
+    print(f"Phases used: {result.total_phases}")
+
+    # Check if parallel execution was effective
+    if result.total_phases < len(agent.tasks):
+        print("Parallel execution optimized the pipeline")
 
 ### Execution Phases
 
