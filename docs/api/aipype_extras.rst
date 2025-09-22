@@ -7,7 +7,7 @@ The aipype-extras package provides optional tools and utilities that extend the 
    This package is optional and provides additional tools for debugging, logging, and monitoring aipype workflows.
 
 Package Overview
----------------
+================
 
 .. automodule:: aipype_extras
    :members:

@@ -12,7 +12,7 @@ Core Components
    :show-inheritance:
 
 Pipeline Agent
--------------
+==============
 
 .. automodule:: aipype.pipeline_agent
    :members:
@@ -63,7 +63,7 @@ Conditional Task
    :show-inheritance:
 
 Core Infrastructure
-------------------
+===================
 
 Task Result
 ^^^^^^^^^^^

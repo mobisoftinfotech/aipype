@@ -7,7 +7,7 @@ The aipype-g package provides seamless integration with Google APIs, enabling ai
    This package requires Google API credentials and is designed for workflows that need to interact with Google services.
 
 Package Overview
----------------
+================
 
 .. automodule:: aipype_g
    :members:

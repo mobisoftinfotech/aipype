@@ -6,12 +6,12 @@ execution phases based on their dependencies, enabling optimal performance and
 data flow between tasks.
 
 Key Concepts:
-    - **Dependency Resolution**: Tasks automatically receive data from dependent tasks
-    - **Execution Phases**: Tasks are grouped for optimal parallel/sequential execution
-    - **Task Context**: Shared data store for inter-task communication
-    - **Error Handling**: TaskResult pattern for graceful error propagation
+    * **Dependency Resolution**: Tasks automatically receive data from dependent tasks
+    * **Execution Phases**: Tasks are grouped for optimal parallel/sequential execution
+    * **Task Context**: Shared data store for inter-task communication
+    * **Error Handling**: TaskResult pattern for graceful error propagation
 
-### Quick Example
+**Quick Example**
 
 .. code-block:: python
 
@@ -32,19 +32,19 @@ Key Concepts:
     result = agent.run()
     print(f"Status: {result.status}, Tasks: {result.completed_tasks}/{result.total_tasks}")
 
-### Execution Flow
+**Execution Flow**
 
-1. **Setup**: Tasks defined with dependencies in setup_tasks()
-2. **Planning**: Dependency graph analyzed, phases created
-3. **Resolution**: Task configs updated with dependency data
-4. **Execution**: Phases run sequentially, tasks within phases run in parallel
-5. **Results**: AgentRunResult returned with execution status and metrics
+#. **Setup**: Tasks defined with dependencies in setup_tasks()
+#. **Planning**: Dependency graph analyzed, phases created
+#. **Resolution**: Task configs updated with dependency data
+#. **Execution**: Phases run sequentially, tasks within phases run in parallel
+#. **Results**: AgentRunResult returned with execution status and metrics
 
 See Also:
-    - BaseTask: Base class for implementing custom tasks
-    - TaskDependency: Declarative dependency specification
-    - TaskContext: Shared data store for task communication
-    - AgentRunResult: Standardized execution result format
+    * BaseTask: Base class for implementing custom tasks
+    * TaskDependency: Declarative dependency specification
+    * TaskContext: Shared data store for task communication
+    * AgentRunResult: Standardized execution result format
 """
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -62,36 +62,36 @@ from .utils.common import setup_logger
 class TaskExecutionPlan:
     """Execution plan that organizes tasks into phases based on dependencies.
 
-    This class analyzes task dependencies and creates an optimal execution plan where:
-    - Tasks with no dependencies run in the first phase
-    - Tasks whose dependencies are satisfied run in subsequent phases
-    - Tasks within the same phase can run in parallel
-    - Phases execute sequentially to maintain dependency ordering
+This class analyzes task dependencies and creates an optimal execution plan where:
+* Tasks with no dependencies run in the first phase
+* Tasks whose dependencies are satisfied run in subsequent phases
+* Tasks within the same phase can run in parallel
+* Phases execute sequentially to maintain dependency ordering
 
-    The plan automatically detects and rejects circular dependencies, ensuring
-    all workflows can execute successfully.
+The plan automatically detects and rejects circular dependencies, ensuring
+all workflows can execute successfully.
 
-    Attributes:
-        tasks: Original list of tasks to organize
-        phases: List of task lists, each representing an execution phase
+Attributes:
+    tasks: Original list of tasks to organize
+    phases: List of task lists, each representing an execution phase
 
-    Example:
-        Given tasks: A, B (depends on A), C (depends on A), D (depends on B,C)
+Example:
+    Given tasks: A, B (depends on A), C (depends on A), D (depends on B,C)
 
-        Execution plan:
-        - Phase 1: [A] (no dependencies)
-        - Phase 2: [B, C] (depend only on A, can run in parallel)
-        - Phase 3: [D] (depends on B and C)
+    Execution plan:
+    * Phase 1: [A] (no dependencies)
+    * Phase 2: [B, C] (depend only on A, can run in parallel)
+    * Phase 3: [D] (depends on B and C)
     """
 
     def __init__(self, tasks: List[BaseTask]):
         """Create execution plan from list of tasks.
 
-        Args:
-            tasks: List of tasks to organize into execution phases
+Args:
+    tasks: List of tasks to organize into execution phases
 
-        Raises:
-            ValueError: If circular dependencies detected or dependencies cannot be satisfied
+Raises:
+    ValueError: If circular dependencies detected or dependencies cannot be satisfied
         """
         self.tasks = tasks
         self.logger = setup_logger("task_execution_plan")
@@ -120,11 +120,11 @@ class TaskExecutionPlan:
     ) -> Dict[str, Set[str]]:
         """Build dependency graph mapping task names to their dependencies.
 
-        Args:
-            task_map: Mapping of task names to task objects
+Args:
+    task_map: Mapping of task names to task objects
 
-        Returns:
-            Dictionary mapping task names to sets of dependency task names
+Returns:
+    Dictionary mapping task names to sets of dependency task names
         """
         dependency_graph: Dict[str, Set[str]] = {}
 
@@ -151,11 +151,11 @@ class TaskExecutionPlan:
     ) -> None:
         """Check for circular dependencies in the graph.
 
-        Args:
-            dependency_graph: Task dependency graph
+Args:
+    dependency_graph: Task dependency graph
 
-        Raises:
-            ValueError: If circular dependency detected
+Raises:
+    ValueError: If circular dependency detected
         """
         # Use DFS to detect cycles
         visited: Set[str] = set()
@@ -189,9 +189,9 @@ class TaskExecutionPlan:
     ) -> None:
         """Organize tasks into execution phases for optimal parallelism.
 
-        Args:
-            dependency_graph: Task dependency graph
-            task_map: Mapping of task names to task objects
+Args:
+    dependency_graph: Task dependency graph
+    task_map: Mapping of task names to task objects
         """
         remaining_tasks = set(dependency_graph.keys())
 
@@ -219,19 +219,19 @@ class TaskExecutionPlan:
     def total_phases(self) -> int:
         """Get total number of execution phases.
 
-        Returns:
-            Number of phases
+Returns:
+    Number of phases
         """
         return len(self.phases)
 
     def get_phase(self, phase_index: int) -> List[BaseTask]:
         """Get tasks in a specific phase.
 
-        Args:
-            phase_index: Index of the phase
+Args:
+    phase_index: Index of the phase
 
-        Returns:
-            List of tasks in the phase
+Returns:
+    List of tasks in the phase
         """
         if 0 <= phase_index < len(self.phases):
             return self.phases[phase_index]
@@ -255,16 +255,16 @@ class PipelineAgent:
     implement setup_tasks() to define their workflow.
 
     Key Features:
-        - **Automatic Dependency Resolution**: Tasks receive data from previous tasks
-        - **Parallel Execution**: Independent tasks run simultaneously for performance
-        - **Error Handling**: Graceful handling of task failures with detailed reporting
-        - **Context Management**: Shared data store for inter-task communication
-        - **Result Tracking**: Comprehensive execution metrics and status reporting
+        * **Automatic Dependency Resolution**: Tasks receive data from previous tasks
+        * **Parallel Execution**: Independent tasks run simultaneously for performance
+        * **Error Handling**: Graceful handling of task failures with detailed reporting
+        * **Context Management**: Shared data store for inter-task communication
+        * **Result Tracking**: Comprehensive execution metrics and status reporting
 
     Configuration Options:
-        - enable_parallel (bool): Enable parallel task execution (default: True)
-        - max_parallel_tasks (int): Maximum concurrent tasks (default: 5)
-        - stop_on_failure (bool): Stop pipeline on first failure (default: True)
+        * enable_parallel (bool): Enable parallel task execution (default: True)
+        * max_parallel_tasks (int): Maximum concurrent tasks (default: 5)
+        * stop_on_failure (bool): Stop pipeline on first failure (default: True)
 
     Lifecycle:
         1. **Initialization**: Agent created with name and config
@@ -272,7 +272,7 @@ class PipelineAgent:
         3. **Execution**: run() method orchestrates task execution
         4. **Results**: AgentRunResult returned with status and metrics
 
-### Example
+**Example**
 
 **Basic agent implementation:**
 
@@ -324,41 +324,41 @@ class PipelineAgent:
         "max_parallel_tasks": 10   # Higher concurrency
     })
 
-### Return Values
+**Return Values**
 
 run() returns AgentRunResult with:
 
-- **status**: SUCCESS, PARTIAL, ERROR, or RUNNING
-- **completed_tasks/failed_tasks**: Task completion counts
-- **total_phases**: Number of execution phases
-- **execution_time**: Total runtime in seconds
-- **metadata**: Additional execution information
+* **status**: SUCCESS, PARTIAL, ERROR, or RUNNING
+* **completed_tasks/failed_tasks**: Task completion counts
+* **total_phases**: Number of execution phases
+* **execution_time**: Total runtime in seconds
+* **metadata**: Additional execution information
 
-### Error Handling
+**Error Handling**
 
-- Individual task failures are captured and reported
-- Pipeline can continue or stop based on stop_on_failure setting
-- Detailed error information available in execution context
-- Partial success supported for workflows with optional components
+* Individual task failures are captured and reported
+* Pipeline can continue or stop based on stop_on_failure setting
+* Detailed error information available in execution context
+* Partial success supported for workflows with optional components
 
-### Thread Safety
+**Thread Safety**
 
-- TaskContext is thread-safe for concurrent task execution
-- Agent instance should not be shared between threads
-- Each agent execution creates isolated context
+* TaskContext is thread-safe for concurrent task execution
+* Agent instance should not be shared between threads
+* Each agent execution creates isolated context
 
-### Performance
+**Performance**
 
-- Tasks in same phase execute in parallel (when enabled)
-- Dependency resolution minimizes execution phases
-- ThreadPoolExecutor manages concurrent task execution
-- Configurable concurrency limits prevent resource exhaustion
+* Tasks in same phase execute in parallel (when enabled)
+* Dependency resolution minimizes execution phases
+* ThreadPoolExecutor manages concurrent task execution
+* Configurable concurrency limits prevent resource exhaustion
 
     See Also:
-        - BaseTask: Base class for implementing custom tasks
-        - TaskDependency: Declarative dependency specification
-        - TaskContext: Shared data store access via agent.context
-        - AgentRunResult: Execution result format and status checking
+        * BaseTask: Base class for implementing custom tasks
+        * TaskDependency: Declarative dependency specification
+        * TaskContext: Shared data store access via agent.context
+        * AgentRunResult: Execution result format and status checking
     """
 
     def __init__(self, name: str, config: Optional[Dict[str, Any]] = None):
@@ -372,29 +372,28 @@ run() returns AgentRunResult with:
             name: Unique identifier for this agent instance. Used in logging
                 and result tracking. Should be descriptive of the agent's purpose.
             config: Configuration dictionary with agent settings:
-                - enable_parallel (bool): Enable parallel task execution (default: True)
-                - max_parallel_tasks (int): Maximum concurrent tasks (default: 5)
-                - stop_on_failure (bool): Stop pipeline on first failure (default: True)
+                * enable_parallel (bool): Enable parallel task execution (default: True)
+                * max_parallel_tasks (int): Maximum concurrent tasks (default: 5)
+                * stop_on_failure (bool): Stop pipeline on first failure (default: True)
                 Additional config keys are passed to tasks via self.config.
 
         Attributes Created:
-            - name: Agent identifier
-            - config: Configuration dictionary
-            - tasks: List of tasks (populated by setup_tasks())
-            - context: TaskContext for inter-task communication
-            - dependency_resolver: Handles dependency resolution
-            - execution_plan: Created during run() execution
+            * name: Agent identifier
+            * config: Configuration dictionary
+            * tasks: List of tasks (populated by setup_tasks())
+            * context: TaskContext for inter-task communication
+            * dependency_resolver: Handles dependency resolution
+            * execution_plan: Created during run() execution
 
-### Example
+        Example:
+            .. code-block:: python
 
-.. code-block:: python
-
-    agent = MyAgent("data_processor", {
-        "enable_parallel": True,
-        "max_parallel_tasks": 3,
-        "input_file": "data.csv"
-    })
-    print(f"Agent {agent.name} has {len(agent.tasks)} tasks")
+                agent = MyAgent("data_processor", {
+                    "enable_parallel": True,
+                    "max_parallel_tasks": 3,
+                    "input_file": "data.csv"
+                })
+                print(f"Agent {agent.name} has {len(agent.tasks)} tasks")
 
         Note:
             The agent automatically calls setup_tasks() during initialization.
@@ -437,74 +436,67 @@ run() returns AgentRunResult with:
         Returns:
             List of configured BaseTask instances that define the workflow.
             Tasks should include:
-            - Unique names for identification and dependency references
-            - Configuration dictionaries with required parameters
-            - TaskDependency objects linking tasks together
+            * Unique names for identification and dependency references
+            * Configuration dictionaries with required parameters
+            * TaskDependency objects linking tasks together
 
-### Example
+        Example:
+            Basic search and summarize workflow::
 
-**Basic search and summarize workflow:**
+                def setup_tasks(self):
+                    return [
+                        SearchTask("search", {
+                            "query": self.config.get("topic", ""),
+                            "max_results": 5
+                        }),
+                        LLMTask("summarize", {
+                            "prompt": "Summarize these articles: ${articles}",
+                            "llm_provider": "openai",
+                            "llm_model": "gpt-4"
+                        }, dependencies=[
+                            TaskDependency("articles", "search.results", REQUIRED)
+                        ])
+                    ]
 
-.. code-block:: python
+            Complex workflow with conditional logic::
 
-    def setup_tasks(self):
-        return [
-            SearchTask("search", {
-                "query": self.config.get("topic", ""),
-                "max_results": 5
-            }),
-            LLMTask("summarize", {
-                "prompt": "Summarize these articles: ${articles}",
-                "llm_provider": "openai",
-                "llm_model": "gpt-4"
-            }, dependencies=[
-                TaskDependency("articles", "search.results", REQUIRED)
-            ])
-        ]
+                def setup_tasks(self):
+                    return [
+                        SearchTask("search", {"query": "AI news"}),
+                        TransformTask("filter", {
+                            "transform_function": filter_recent_articles,
+                            "input_field": "results"
+                        }, dependencies=[
+                            TaskDependency("results", "search.results", REQUIRED)
+                        ]),
+                        ConditionalTask("quality_check", {
+                            "condition_function": lambda articles: len(articles) >= 3,
+                            "condition_inputs": ["filtered_articles"],
+                            "action_function": log_action("Quality check passed"),
+                            "else_function": log_action("Insufficient articles")
+                        }, dependencies=[
+                            TaskDependency("filtered_articles", "filter.result", REQUIRED)
+                        ]),
+                        LLMTask("summarize", {
+                            "prompt": "Create summary from: ${content}",
+                            "llm_provider": "openai"
+                        }, dependencies=[
+                            TaskDependency("content", "filter.result", REQUIRED)
+                        ])
+                    ]
 
-**Complex workflow with conditional logic:**
+            Task Naming:
+                * Use descriptive names that indicate the task's purpose
+                * Names must be unique within the agent
+                * Use snake_case for consistency
+                * **Good**: "fetch_articles", "analyze_sentiment", "save_results"
+                * **Avoid**: "task1", "t", "process"
 
-.. code-block:: python
-
-    def setup_tasks(self):
-        return [
-            SearchTask("search", {"query": "AI news"}),
-            TransformTask("filter", {
-                "transform_function": filter_recent_articles,
-                "input_field": "results"
-            }, dependencies=[
-                TaskDependency("results", "search.results", REQUIRED)
-            ]),
-            ConditionalTask("quality_check", {
-                "condition_function": lambda articles: len(articles) >= 3,
-                "condition_inputs": ["filtered_articles"],
-                "action_function": log_action("Quality check passed"),
-                "else_function": log_action("Insufficient articles")
-            }, dependencies=[
-                TaskDependency("filtered_articles", "filter.result", REQUIRED)
-            ]),
-            LLMTask("summarize", {
-                "prompt": "Create summary from: ${content}",
-                "llm_provider": "openai"
-            }, dependencies=[
-                TaskDependency("content", "filter.result", REQUIRED)
-            ])
-        ]
-
-### Task Naming
-
-- Use descriptive names that indicate the task's purpose
-- Names must be unique within the agent
-- Use snake_case for consistency
-- **Good**: "fetch_articles", "analyze_sentiment", "save_results"
-- **Avoid**: "task1", "t", "process"
-
-### Dependency Design
-
-- Required dependencies must be satisfied for task to run
-- Optional dependencies use default values if source unavailable
-- Circular dependencies will cause pipeline execution to fail
-- Use transform_func in dependencies for data preprocessing
+            Dependency Design:
+                * Required dependencies must be satisfied for task to run
+                * Optional dependencies use default values if source unavailable
+                * Circular dependencies will cause pipeline execution to fail
+                * Use transform_func in dependencies for data preprocessing
 
         Raises:
             NotImplementedError: Must be implemented by subclasses
@@ -515,9 +507,9 @@ run() returns AgentRunResult with:
             from this method instead.
 
         See Also:
-            - TaskDependency: For creating task dependencies
-            - BaseTask subclasses: LLMTask, SearchTask, ConditionalTask, etc.
-            - Task-specific documentation for configuration options
+            * TaskDependency: For creating task dependencies
+            * BaseTask subclasses: LLMTask, SearchTask, ConditionalTask, etc.
+            * Task-specific documentation for configuration options
         """
         raise NotImplementedError("Subclasses must implement setup_tasks()")
 
@@ -593,7 +585,7 @@ run() returns AgentRunResult with:
             - execution_time: Total runtime in seconds
             - metadata: Additional execution information
 
-### Example
+**Example**
 
 **Basic execution and result checking:**
 
@@ -628,7 +620,7 @@ run() returns AgentRunResult with:
     if result.total_phases < len(agent.tasks):
         print("Parallel execution optimized the pipeline")
 
-### Execution Phases
+**Execution Phases**
 
 Tasks are automatically organized into phases based on dependencies:
 
@@ -639,23 +631,23 @@ Tasks are automatically organized into phases based on dependencies:
 Within each phase, tasks can execute in parallel (if enabled).
 Between phases, execution is sequential to maintain dependency order.
 
-### Error Handling
+**Error Handling**
 
-- Individual task errors are captured in TaskResult objects
+* Individual task errors are captured in TaskResult objects
 - Pipeline can continue or stop based on stop_on_failure config
 - Partial success is supported when some tasks succeed
 - All errors are logged with detailed context information
-- Failed task dependencies propagate to dependent tasks
+* Failed task dependencies propagate to dependent tasks
 
-### Thread Safety
+**Thread Safety**
 
 This method is not thread-safe. Each agent instance should only
 execute one pipeline at a time. Concurrent task execution within
 the pipeline is handled internally with ThreadPoolExecutor.
 
-### Performance
+**Performance**
 
-- Parallel execution significantly improves performance for independent tasks
+* Parallel execution significantly improves performance for independent tasks
 - Dependency resolution optimizes execution order
 - Thread pool size controlled by max_parallel_tasks config
 - Memory usage scales with number of concurrent tasks

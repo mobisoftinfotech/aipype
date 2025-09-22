@@ -90,6 +90,16 @@ autodoc_docstring_signature = True
 autosummary_generate = True
 autosummary_imported_members = True
 
+# Prevent duplicate object descriptions by skipping autosummary for modules already documented
+autodoc_mock_imports = []
+suppress_warnings = ['autosummary.import_cycle']
+
+# Add custom settings to avoid duplicates
+autodoc_member_order = 'bysource'
+autosummary_context = {
+    'skip_member': lambda name: name.startswith('_'),
+}
+
 # Intersphinx configuration
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),

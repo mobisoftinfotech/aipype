@@ -7,21 +7,21 @@ status tracking, and error handling.
 
 Key Features:
 
-1. **TaskResult Pattern**: All tasks return structured results instead of raising exceptions
-2. **Validation Framework**: Declarative configuration validation with detailed error messages
-3. **Status Tracking**: Automatic status management throughout task lifecycle
-4. **Dependency Support**: Built-in support for task dependencies and data flow
-5. **Error Handling**: Graceful error capture and propagation without exceptions
+#. **TaskResult Pattern**: All tasks return structured results instead of raising exceptions
+#. **Validation Framework**: Declarative configuration validation with detailed error messages
+#. **Status Tracking**: Automatic status management throughout task lifecycle
+#. **Dependency Support**: Built-in support for task dependencies and data flow
+#. **Error Handling**: Graceful error capture and propagation without exceptions
 
-### Task Lifecycle
+**Task Lifecycle**
 
-1. **Initialization**: Task created with name, config, and dependencies
-2. **Validation**: Configuration validated against task-specific rules
-3. **Execution**: run() method performs the actual work
-4. **Result**: TaskResult returned with success/failure status and data
-5. **Context Update**: Results stored in shared TaskContext for other tasks
+#. **Initialization**: Task created with name, config, and dependencies
+#. **Validation**: Configuration validated against task-specific rules
+#. **Execution**: run() method performs the actual work
+#. **Result**: TaskResult returned with success/failure status and data
+#. **Context Update**: Results stored in shared TaskContext for other tasks
 
-### Implementation Pattern
+**Implementation Pattern**
 
 .. code-block:: python
 
@@ -61,32 +61,32 @@ Key Features:
                     metadata={"task_type": "file_processor", "error_type": type(e).__name__}
                 )
 
-### Error Handling Philosophy
+**Error Handling Philosophy**
 
 Tasks should NEVER raise exceptions for operational errors. Instead:
 
-- Return `TaskResult.failure()` for expected operational failures
-- Return `TaskResult.partial()` for partial success scenarios
-- Only raise exceptions for programming errors or invalid task construction
-- Use detailed error messages that help users understand what went wrong
+* Return `TaskResult.failure()` for expected operational failures
+* Return `TaskResult.partial()` for partial success scenarios
+* Only raise exceptions for programming errors or invalid task construction
+* Use detailed error messages that help users understand what went wrong
 
-### Validation Rules Format
+**Validation Rules Format**
 
 The validation_rules dictionary supports:
 
-- **required**: List of required configuration keys
-- **optional**: List of optional configuration keys
-- **defaults**: Default values for missing optional keys
-- **types**: Expected types for configuration values
-- **ranges**: Valid ranges for numeric values (min, max)
-- **custom**: Custom validation functions for complex rules
+* **required**: List of required configuration keys
+* **optional**: List of optional configuration keys
+* **defaults**: Default values for missing optional keys
+* **types**: Expected types for configuration values
+* **ranges**: Valid ranges for numeric values (min, max)
+* **custom**: Custom validation functions for complex rules
 
 See Also:
 
-- TaskResult: Standardized return format for task execution
-- TaskDependency: For creating dependencies between tasks
-- PipelineAgent: For orchestrating multiple tasks together
-- Task implementations: LLMTask, SearchTask, ConditionalTask, etc.
+* TaskResult: Standardized return format for task execution
+* TaskDependency: For creating dependencies between tasks
+* PipelineAgent: For orchestrating multiple tasks together
+* Task implementations: LLMTask, SearchTask, ConditionalTask, etc.
 """
 # pyright: reportImportCycles=false
 
@@ -126,7 +126,7 @@ Attributes:
 Abstract Methods:
     run(): Must be implemented by subclasses to perform task work
 
-### Common Patterns
+**Common Patterns**
 
 **Configuration validation:**
 
@@ -199,29 +199,29 @@ Abstract Methods:
 
             # Process the data...
 
-### Validation Rules
+**Validation Rules**
 
 Tasks can define validation_rules to automatically validate their
 configuration. The validation system supports:
 
-- **required**: Keys that must be present
-- **optional**: Keys that are optional
-- **defaults**: Default values for missing optional keys
-- **types**: Expected Python types for values
-- **ranges**: (min, max) tuples for numeric validation
-- **custom**: Custom validation functions
+* **required**: Keys that must be present
+* **optional**: Keys that are optional
+* **defaults**: Default values for missing optional keys
+* **types**: Expected Python types for values
+* **ranges**: (min, max) tuples for numeric validation
+* **custom**: Custom validation functions
 
-### Status Management
+**Status Management**
 
 Task status is managed automatically:
 
-- **NOT_STARTED**: Initial state
-- **RUNNING**: During execution (set by framework)
-- **SUCCESS**: Task completed successfully
-- **ERROR**: Task failed with error
-- **PARTIAL**: Task completed with partial success
+* **NOT_STARTED**: Initial state
+* **RUNNING**: During execution (set by framework)
+* **SUCCESS**: Task completed successfully
+* **ERROR**: Task failed with error
+* **PARTIAL**: Task completed with partial success
 
-### Thread Safety
+**Thread Safety**
 
 Individual task instances are not thread-safe and should not be
 executed concurrently. However, different task instances can run
@@ -229,10 +229,10 @@ in parallel safely.
 
 See Also:
 
-- TaskResult: Return format for task execution
-- TaskDependency: For creating task dependencies
-- PipelineAgent: For orchestrating multiple tasks
-- Validation documentation in utils.common module
+* TaskResult: Return format for task execution
+* TaskDependency: For creating task dependencies
+* PipelineAgent: For orchestrating multiple tasks
+* Validation documentation in utils.common module
     """
 
     def __init__(
@@ -250,16 +250,16 @@ will be resolved automatically by the PipelineAgent before execution.
 Args:
     name: Unique identifier for this task within the agent. Must be
         unique across all tasks in the same pipeline. Used for:
-        - Logging identification
-        - Dependency references (other_task.field)
-        - Result storage in TaskContext
-        - Status tracking and error reporting
+        * Logging identification
+        * Dependency references (other_task.field)
+        * Result storage in TaskContext
+        * Status tracking and error reporting
     config: Configuration dictionary containing task-specific parameters.
         The exact keys depend on the task implementation. Common patterns:
-        - API credentials and endpoints
-        - File paths and processing options
-        - Behavioral flags and timeout values
-        - Data transformation parameters
+        * API credentials and endpoints
+        * File paths and processing options
+        * Behavioral flags and timeout values
+        * Data transformation parameters
         Will be validated against validation_rules if defined.
     dependencies: List of TaskDependency objects specifying how this
         task receives data from other tasks. Dependencies are resolved
@@ -268,15 +268,15 @@ Args:
         or TaskDependency.create_optional() for convenience.
 
 Attributes Initialized:
-    - name: Task identifier
-    - config: Configuration dictionary (may be updated by dependencies)
-    - dependencies: List of dependency specifications
-    - validation_rules: Set by subclasses for configuration validation
-    - agent_name: Set automatically by PipelineAgent
-    - logger: Task-specific logger (task.{name})
-    - Status tracking fields for execution monitoring
+    * name: Task identifier
+    * config: Configuration dictionary (may be updated by dependencies)
+    * dependencies: List of dependency specifications
+    * validation_rules: Set by subclasses for configuration validation
+    * agent_name: Set automatically by PipelineAgent
+    * logger: Task-specific logger (task.{name})
+    * Status tracking fields for execution monitoring
 
-### Example
+**Example**
 
 **Basic task creation:**
 
@@ -308,15 +308,15 @@ Attributes Initialized:
     )
 
         Note:
-            - Task names should be descriptive and use snake_case
-            - Config validation occurs during run(), not during initialization
-            - Dependencies are resolved by PipelineAgent, not by the task itself
-            - Subclasses should call super().__init__() and set validation_rules
+            * Task names should be descriptive and use snake_case
+            * Config validation occurs during run(), not during initialization
+            * Dependencies are resolved by PipelineAgent, not by the task itself
+            * Subclasses should call super().__init__() and set validation_rules
 
         See Also:
-            - TaskDependency: For creating task dependencies
-            - TaskResult: Return format from run() method
-            - Validation rules documentation for config validation format
+            * TaskDependency: For creating task dependencies
+            * TaskResult: Return format from run() method
+            * Validation rules documentation for config validation format
         """
         self.name = name
         self.config = config or {}
@@ -374,65 +374,65 @@ Attributes Initialized:
 
         Returns:
             TaskResult containing:
-            - status: SUCCESS, PARTIAL, ERROR, or SKIPPED
-            - data: Result data (dict) if successful, None if failed
-            - error: Error message if failed, None if successful
-            - execution_time: Time taken to execute in seconds
-            - metadata: Additional information about execution
+            * status: SUCCESS, PARTIAL, ERROR, or SKIPPED
+            * data: Result data (dict) if successful, None if failed
+            * error: Error message if failed, None if successful
+            * execution_time: Time taken to execute in seconds
+            * metadata: Additional information about execution
 
-### Implementation Guidelines
+**Implementation Guidelines**
 
-1. **Validation First**: Always validate configuration before work:
+#. **Validation First**: Always validate configuration before work:
 
-.. code-block:: python
+   .. code-block:: python
 
-    def run(self) -> TaskResult:
-        start_time = datetime.now()
+       def run(self) -> TaskResult:
+           start_time = datetime.now()
 
-        validation_failure = self._validate_or_fail(start_time)
-        if validation_failure:
-            return validation_failure
+           validation_failure = self._validate_or_fail(start_time)
+           if validation_failure:
+               return validation_failure
 
-2. **Error Handling**: Use TaskResult pattern, not exceptions:
+#. **Error Handling**: Use TaskResult pattern, not exceptions:
 
-.. code-block:: python
+   .. code-block:: python
 
-    try:
-        result = self.do_work()
-        return TaskResult.success(data=result, execution_time=elapsed)
-    except ExpectedError as e:
-        return TaskResult.failure(error_message=str(e), execution_time=elapsed)
+       try:
+           result = self.do_work()
+           return TaskResult.success(data=result, execution_time=elapsed)
+       except ExpectedError as e:
+           return TaskResult.failure(error_message=str(e), execution_time=elapsed)
 
-3. **Timing**: Always include execution timing:
+#. **Timing**: Always include execution timing:
 
-.. code-block:: python
+   .. code-block:: python
 
-    start_time = datetime.now()
-    # ... do work ...
-    execution_time = (datetime.now() - start_time).total_seconds()
+       start_time = datetime.now()
+       # ... do work ...
+       execution_time = (datetime.now() - start_time).total_seconds()
 
-4. **Metadata**: Include useful execution information:
+#. **Metadata**: Include useful execution information:
 
-.. code-block:: python
+   .. code-block:: python
 
-    return TaskResult.success(
-        data=result,
-        execution_time=execution_time,
-        metadata={
-            "processed_items": len(items),
-            "api_calls": call_count,
-            "cache_hits": cache_hits
-        }
-    )
+       return TaskResult.success(
+           data=result,
+           execution_time=execution_time,
+           metadata={
+               "processed_items": len(items),
+               "api_calls": call_count,
+               "cache_hits": cache_hits
+           }
+       )
 
-### Return Patterns
+**Return Patterns**
 
-- **Success**: All work completed successfully
-- **Partial**: Some work completed, some failed (recoverable)
-- **Failure**: Task could not complete due to errors
-- **Skipped**: Task was skipped due to conditions not being met
+* **Success**: All work completed successfully
+* **Partial**: Some work completed, some failed (recoverable)
+* **Failure**: Task could not complete due to errors
+* **Skipped**: Task was skipped due to conditions not being met
 
-### Example Implementation
+**Example Implementation**
 
 .. code-block:: python
 
@@ -470,15 +470,15 @@ Attributes Initialized:
             )
 
         Note:
-            - Never raise exceptions for operational errors
-            - Always calculate and include execution_time
-            - Use descriptive error messages that help users understand issues
-            - Include relevant metadata for debugging and monitoring
+            * Never raise exceptions for operational errors
+            * Always calculate and include execution_time
+            * Use descriptive error messages that help users understand issues
+            * Include relevant metadata for debugging and monitoring
 
         See Also:
-            - TaskResult: For understanding return value structure
-            - _validate_or_fail(): For configuration validation pattern
-            - Task-specific implementations for concrete examples
+            * TaskResult: For understanding return value structure
+            * _validate_or_fail(): For configuration validation pattern
+            * Task-specific implementations for concrete examples
         """
         pass
 
