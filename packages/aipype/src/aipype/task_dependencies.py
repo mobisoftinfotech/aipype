@@ -63,11 +63,11 @@ Use transform_func to preprocess dependency data:
 * **REQUIRED**: Task execution fails if dependency unavailable
 * **OPTIONAL**: Uses default_value if dependency unavailable
 
-See Also:
-    * TaskDependency: Individual dependency specification
-    * DependencyResolver: Automatic dependency resolution engine
-    * TaskContext: Shared data store for inter-task communication
-    * Built-in transform functions: extract_urls_from_results, combine_article_content
+    See Also:
+        * TaskDependency: Individual dependency specification
+        * DependencyResolver: Automatic dependency resolution engine
+        * TaskContext: Shared data store for inter-task communication
+        * Built-in transform functions: extract_urls_from_results, combine_article_content
 """
 
 from enum import Enum
@@ -216,11 +216,11 @@ Optional preprocessing of resolved data before injection:
 TaskDependency instances are immutable after creation and thread-safe.
 However, transform functions should be thread-safe if used in parallel execution.
 
-See Also:
-    * DependencyType: REQUIRED vs OPTIONAL dependency behavior
-    * DependencyResolver: Automatic resolution engine
-    * TaskContext: Source of dependency data
-    * Built-in transform utilities: extract_urls_from_results, etc.
+    See Also:
+        * DependencyType: REQUIRED vs OPTIONAL dependency behavior
+        * DependencyResolver: Automatic resolution engine
+        * TaskContext: Source of dependency data
+        * Built-in transform utilities: extract_urls_from_results, etc.
     """
 
     def __init__(
@@ -253,12 +253,14 @@ See Also:
                 * "process.metadata.item_count" - Access metadata fields
 
             dependency_type: How to handle missing dependencies:
+
                 * DependencyType.REQUIRED: Task execution fails if unavailable
                 * DependencyType.OPTIONAL: Uses default_value if unavailable
 
             default_value: Value to use when optional dependency is unavailable.
                 Only relevant for OPTIONAL dependencies. Can be any type that
                 makes sense for the consuming task. Common patterns:
+
                 * Empty list: []
                 * Empty dict: {}
                 * Default config: {"timeout": 30, "retries": 3}
@@ -267,14 +269,17 @@ See Also:
             transform_func: Optional function to preprocess resolved data before
                 injection. Function signature: (resolved_data: Any) -> Any.
                 Common uses:
+
                 * Extract specific fields: lambda x: [item['url'] for item in x]
                 * Filter data: lambda x: [item for item in x if item['valid']]
                 * Combine data: lambda x: ' '.join(x)
                 * Format data: lambda x: {"processed": x, "count": len(x)}
 
             override_existing: Whether to override existing values in task config.
+
                 * False (default): Only inject if key doesn't exist in config
                 * True: Always inject, overriding existing config values
+
                 Use with caution as it can override user-provided configuration.
 
             description: Human-readable description of this dependency's purpose.

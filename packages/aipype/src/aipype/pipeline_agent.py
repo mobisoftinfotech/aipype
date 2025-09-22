@@ -354,11 +354,6 @@ run() returns AgentRunResult with:
 * ThreadPoolExecutor manages concurrent task execution
 * Configurable concurrency limits prevent resource exhaustion
 
-    See Also:
-        * BaseTask: Base class for implementing custom tasks
-        * TaskDependency: Declarative dependency specification
-        * TaskContext: Shared data store access via agent.context
-        * AgentRunResult: Execution result format and status checking
     """
 
     def __init__(self, name: str, config: Optional[Dict[str, Any]] = None):
@@ -372,9 +367,11 @@ run() returns AgentRunResult with:
             name: Unique identifier for this agent instance. Used in logging
                 and result tracking. Should be descriptive of the agent's purpose.
             config: Configuration dictionary with agent settings:
+
                 * enable_parallel (bool): Enable parallel task execution (default: True)
                 * max_parallel_tasks (int): Maximum concurrent tasks (default: 5)
                 * stop_on_failure (bool): Stop pipeline on first failure (default: True)
+
                 Additional config keys are passed to tasks via self.config.
 
         Attributes Created:
@@ -399,6 +396,12 @@ run() returns AgentRunResult with:
             The agent automatically calls setup_tasks() during initialization.
             If setup_tasks() raises an exception, the agent will log a warning
             but continue with an empty task list.
+
+        See Also:
+            * BaseTask: Base class for implementing custom tasks
+            * TaskDependency: Declarative dependency specification
+            * TaskContext: Shared data store for inter-task communication
+            * AgentRunResult: Standardized execution result format
         """
         self.name = name
         self.config = config or {}
@@ -485,18 +488,20 @@ run() returns AgentRunResult with:
                         ])
                     ]
 
-            Task Naming:
-                * Use descriptive names that indicate the task's purpose
-                * Names must be unique within the agent
-                * Use snake_case for consistency
-                * **Good**: "fetch_articles", "analyze_sentiment", "save_results"
-                * **Avoid**: "task1", "t", "process"
+        Task Naming:
 
-            Dependency Design:
-                * Required dependencies must be satisfied for task to run
-                * Optional dependencies use default values if source unavailable
-                * Circular dependencies will cause pipeline execution to fail
-                * Use transform_func in dependencies for data preprocessing
+            * Use descriptive names that indicate the task's purpose
+            * Names must be unique within the agent
+            * Use snake_case for consistency
+            * **Good**: "fetch_articles", "analyze_sentiment", "save_results"
+            * **Avoid**: "task1", "t", "process"
+
+        Dependency Design:
+
+            * Required dependencies must be satisfied for task to run
+            * Optional dependencies use default values if source unavailable
+            * Circular dependencies will cause pipeline execution to fail
+            * Use transform_func in dependencies for data preprocessing
 
         Raises:
             NotImplementedError: Must be implemented by subclasses
@@ -577,6 +582,7 @@ run() returns AgentRunResult with:
 
         Returns:
             AgentRunResult containing:
+
             - status: SUCCESS (all tasks completed), PARTIAL (some failed),
               ERROR (all failed), or RUNNING (already executing)
             - completed_tasks: Number of successfully completed tasks
@@ -634,9 +640,9 @@ Between phases, execution is sequential to maintain dependency order.
 **Error Handling**
 
 * Individual task errors are captured in TaskResult objects
-- Pipeline can continue or stop based on stop_on_failure config
-- Partial success is supported when some tasks succeed
-- All errors are logged with detailed context information
+* Pipeline can continue or stop based on stop_on_failure config
+* Partial success is supported when some tasks succeed
+* All errors are logged with detailed context information
 * Failed task dependencies propagate to dependent tasks
 
 **Thread Safety**
@@ -648,9 +654,9 @@ the pipeline is handled internally with ThreadPoolExecutor.
 **Performance**
 
 * Parallel execution significantly improves performance for independent tasks
-- Dependency resolution optimizes execution order
-- Thread pool size controlled by max_parallel_tasks config
-- Memory usage scales with number of concurrent tasks
+* Dependency resolution optimizes execution order
+* Thread pool size controlled by max_parallel_tasks config
+* Memory usage scales with number of concurrent tasks
 
         Note:
             If the agent is already running, this method returns immediately

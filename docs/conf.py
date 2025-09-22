@@ -87,18 +87,18 @@ always_document_param_types = True
 autodoc_docstring_signature = True
 
 # Autosummary settings
-autosummary_generate = True
-autosummary_imported_members = True
+autosummary_generate = False
+autosummary_imported_members = False
 
-# Prevent duplicate object descriptions by skipping autosummary for modules already documented
+# Suppress warnings
+suppress_warnings = [
+    'autosummary.import_cycle',
+    'autodoc.import_object'
+]
+
+# Clean autodoc settings
 autodoc_mock_imports = []
-suppress_warnings = ['autosummary.import_cycle']
-
-# Add custom settings to avoid duplicates
 autodoc_member_order = 'bysource'
-autosummary_context = {
-    'skip_member': lambda name: name.startswith('_'),
-}
 
 # Intersphinx configuration
 intersphinx_mapping = {
@@ -120,7 +120,6 @@ html_theme_options = {
     "canonical_url": "",
     "analytics_id": "",
     "logo_only": False,
-    "display_version": True,
     "prev_next_buttons_location": "bottom",
     "style_external_links": False,
     "vcs_pageview_mode": "",

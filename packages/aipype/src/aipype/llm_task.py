@@ -222,48 +222,40 @@ class LLMTask(BaseTask):
 
 Different providers require different configuration:
 
-**OpenAI:**
+**OpenAI**::
 
-```python
-{
-    "llm_provider": "openai",
-    "llm_model": "gpt-4",
-    "temperature": 0.7,
-    "max_tokens": 1000
-}
-```
+    {
+        "llm_provider": "openai",
+        "llm_model": "gpt-4",
+        "temperature": 0.7,
+        "max_tokens": 1000
+    }
 
-**Anthropic:**
+**Anthropic**::
 
-```python
-{
-    "llm_provider": "anthropic",
-    "llm_model": "claude-3-opus-20240229",
-    "temperature": 0.5,
-    "max_tokens": 2000
-}
-```
+    {
+        "llm_provider": "anthropic",
+        "llm_model": "claude-3-opus-20240229",
+        "temperature": 0.5,
+        "max_tokens": 2000
+    }
 
-**Ollama (local):**
+**Ollama (local)**::
 
-```python
-{
-    "llm_provider": "ollama",
-    "llm_model": "llama2",
-    "temperature": 0.8
-}
-```
+    {
+        "llm_provider": "ollama",
+        "llm_model": "llama2",
+        "temperature": 0.8
+    }
 
-**Azure OpenAI:**
+**Azure OpenAI**::
 
-```python
-{
-    "llm_provider": "azure",
-    "llm_model": "deployment-name",
-    "api_base": "https://your-resource.openai.azure.com/",
-    "api_version": "2023-05-15"
-}
-```
+    {
+        "llm_provider": "azure",
+        "llm_model": "deployment-name",
+        "api_base": "https://your-resource.openai.azure.com/",
+        "api_version": "2023-05-15"
+    }
 
 **Response Structure**
 
@@ -346,7 +338,6 @@ Successful responses include:
         TaskDependency("data", "processor.results", REQUIRED),
         TaskDependency("domain", "config.analysis_domain", REQUIRED)
     ])
-```
 
 **Error Handling**
 
@@ -366,11 +357,11 @@ Common failure scenarios and recovery:
 * Consider model capabilities vs cost (gpt-3.5-turbo vs gpt-4)
 * Use tool_choice="none" to disable tool calling when not needed
 
-    See Also:
-        * @tool: For creating callable functions
-        * TaskDependency: For template variable injection
-        * litellm: Underlying provider abstraction
-        * Tool calling examples in the examples package
+See Also:
+    * @tool: For creating callable functions
+    * TaskDependency: For template variable injection
+    * litellm: Underlying provider abstraction
+    * Tool calling examples in the examples package
     """
 
     REQUIRED_CONFIGS = ["llm_provider", "llm_model"]
@@ -397,6 +388,7 @@ Common failure scenarios and recovery:
             config: LLM configuration dictionary with the following keys:
 
                 **Required:**
+
                 - llm_provider (str): LLM provider name. Supported values include:
                   "openai", "anthropic", "ollama", "azure", "google", "cohere", etc.
                 - llm_model (str): Model identifier specific to the provider:
@@ -406,22 +398,26 @@ Common failure scenarios and recovery:
                   - Google: "gemini-pro", "gemini-pro-vision"
 
                 **Prompt Configuration:**
+
                 - prompt OR prompt_template (str): Main user message with ${var} templates
                 - context (str, optional): System/context message (supports templates)
                 - role (str, optional): User role description (supports templates)
 
                 **Generation Parameters:**
+
                 - temperature (float, 0.0-2.0): Randomness control (default: 0.7)
                 - max_tokens (int): Maximum response tokens (default: 1000)
                 - timeout (float): Request timeout in seconds (default: 60)
 
                 **Tool Calling:**
+
                 - tools (List[Callable], optional): List of @tool decorated functions
                 - tool_choice (str, optional): "auto", "none", or specific tool name
                 - parallel_tool_calls (bool): Enable parallel tool execution (default: True)
                 - max_tool_execution_time (float): Tool timeout in seconds (default: 30)
 
                 **Provider-Specific:**
+
                 - api_key (str, optional): API key (can also use environment variables)
                 - api_base (str, optional): Custom API endpoint (for Azure, local deployments)
                 - api_version (str, optional): API version (for Azure OpenAI)

@@ -1,10 +1,10 @@
 aipype - Core Framework
-======================
+=======================
 
 The core aipype package provides the foundation for building AI agent pipelines with declarative task orchestration and automatic dependency resolution.
 
 Core Components
---------------
+---------------
 
 .. automodule:: aipype
    :members:
@@ -66,7 +66,7 @@ Core Infrastructure
 ===================
 
 Task Result
-^^^^^^^^^^^
+-----------
 
 .. automodule:: aipype.task_result
    :members:
@@ -74,7 +74,7 @@ Task Result
    :show-inheritance:
 
 Agent Run Result
-^^^^^^^^^^^^^^^^
+----------------
 
 .. automodule:: aipype.agent_run_result
    :members:
@@ -82,7 +82,7 @@ Agent Run Result
    :show-inheritance:
 
 Task Context
-^^^^^^^^^^^^
+------------
 
 .. automodule:: aipype.task_context
    :members:
@@ -90,7 +90,7 @@ Task Context
    :show-inheritance:
 
 Task Dependencies
-^^^^^^^^^^^^^^^^^
+-----------------
 
 .. automodule:: aipype.task_dependencies
    :members:

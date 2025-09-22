@@ -53,18 +53,6 @@ Packages
    api/aipype_extras
    api/aipype_g
 
-API Reference
--------------
-
-.. autosummary::
-   :toctree: _autosummary
-   :template: custom-module-template.rst
-   :recursive:
-
-   aipype
-   aipype_extras
-   aipype_g
-
 Indices and tables
 ==================
 

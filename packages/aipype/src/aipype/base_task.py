@@ -227,12 +227,11 @@ Individual task instances are not thread-safe and should not be
 executed concurrently. However, different task instances can run
 in parallel safely.
 
-See Also:
-
-* TaskResult: Return format for task execution
-* TaskDependency: For creating task dependencies
-* PipelineAgent: For orchestrating multiple tasks
-* Validation documentation in utils.common module
+    See Also:
+        * TaskResult: Return format for task execution
+        * TaskDependency: For creating task dependencies
+        * PipelineAgent: For orchestrating multiple tasks
+        * Validation documentation in utils.common module
     """
 
     def __init__(
