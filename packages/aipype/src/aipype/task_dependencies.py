@@ -5,14 +5,14 @@ data flow between tasks in PipelineAgent workflows. Dependencies are specified
 declaratively and resolved automatically, enabling complex data transformations
 and pipeline orchestration without manual data passing.
 
-Key Features:
+Key Features
     * **Declarative Dependencies**: Specify data flow using simple path syntax
     * **Automatic Resolution**: Dependencies resolved before task execution
     * **Data Transformation**: Optional transform functions for data preprocessing
     * **Type Safety**: Required vs optional dependencies with validation
     * **Path Access**: Flexible dot-notation path access for nested data
 
-Dependency Flow:
+Dependency Flow
     #. **Declaration**: Tasks declare dependencies using source paths
     #. **Resolution**: DependencyResolver extracts data from TaskContext
     #. **Transformation**: Optional transform functions process data
@@ -63,11 +63,12 @@ Use transform_func to preprocess dependency data:
 * **REQUIRED**: Task execution fails if dependency unavailable
 * **OPTIONAL**: Uses default_value if dependency unavailable
 
-    See Also:
-        * TaskDependency: Individual dependency specification
-        * DependencyResolver: Automatic dependency resolution engine
-        * TaskContext: Shared data store for inter-task communication
-        * Built-in transform functions: extract_urls_from_results, combine_article_content
+See Also:
+    * TaskDependency: Individual dependency specification
+    * DependencyResolver: Automatic dependency resolution engine
+    * TaskContext: Shared data store for inter-task communication
+    * Built-in transform functions: extract_urls_from_results, combine_article_content
+
 """
 
 from enum import Enum
@@ -84,9 +85,10 @@ from .utils.common import setup_logger
 class DependencyType(Enum):
     """Enumeration of dependency types for task data flow.
 
-    Dependency types control how missing dependencies are handled:
-    * REQUIRED: Task execution fails if dependency cannot be resolved
-    * OPTIONAL: Default value used if dependency unavailable
+Dependency types control how missing dependencies are handled:
+
+* REQUIRED: Task execution fails if dependency cannot be resolved
+* OPTIONAL: Default value used if dependency unavailable
 
 **Example**
 
@@ -97,7 +99,8 @@ class DependencyType(Enum):
 
     # Optional dependency - uses default if config_task unavailable
     TaskDependency("settings", "config_task.options", OPTIONAL, default_value={})
-    """
+
+"""
 
     REQUIRED = "required"
     OPTIONAL = "optional"
@@ -106,27 +109,27 @@ class DependencyType(Enum):
 class TaskDependency:
     """Specification for automatic data flow between tasks in a pipeline.
 
-    TaskDependency defines how a task receives data from other tasks in the
-    pipeline. Dependencies are resolved automatically by the PipelineAgent
-    before task execution, with resolved data added to the task's configuration.
+TaskDependency defines how a task receives data from other tasks in the
+pipeline. Dependencies are resolved automatically by the PipelineAgent
+before task execution, with resolved data added to the task's configuration.
 
-    The dependency system supports flexible path-based data access, optional
-    data transformation, and both required and optional dependencies with
-    appropriate error handling.
+The dependency system supports flexible path-based data access, optional
+data transformation, and both required and optional dependencies with
+appropriate error handling.
 
-    Core Components:
-        * **name**: Key in target task's config where resolved data is stored
-        * **source_path**: Dot-notation path to source data in TaskContext
-        * **dependency_type**: REQUIRED or OPTIONAL behavior for missing data
-        * **transform_func**: Optional function to process resolved data
-        * **default_value**: Fallback value for optional dependencies
+Core Components:
+    * **name**: Key in target task's config where resolved data is stored
+    * **source_path**: Dot-notation path to source data in TaskContext
+    * **dependency_type**: REQUIRED or OPTIONAL behavior for missing data
+    * **transform_func**: Optional function to process resolved data
+    * **default_value**: Fallback value for optional dependencies
 
-    Path Syntax:
-        Source paths use dot notation to access nested data:
-        * "task.field" - Direct field access
-        * "task.data.nested.value" - Nested object access
-        * "task.results[].url" - Array element extraction
-        * "task.metadata.statistics" - Metadata access
+Path Syntax:
+    * Source paths use dot notation to access nested data
+    * "task.field" - Direct field access
+    * "task.data.nested.value" - Nested object access
+    * "task.results[].url" - Array element extraction
+    * "task.metadata.statistics" - Metadata access
 
 **Transform Functions**
 
@@ -216,12 +219,13 @@ Optional preprocessing of resolved data before injection:
 TaskDependency instances are immutable after creation and thread-safe.
 However, transform functions should be thread-safe if used in parallel execution.
 
-    See Also:
-        * DependencyType: REQUIRED vs OPTIONAL dependency behavior
-        * DependencyResolver: Automatic resolution engine
-        * TaskContext: Source of dependency data
-        * Built-in transform utilities: extract_urls_from_results, etc.
-    """
+See Also:
+    * DependencyType: REQUIRED vs OPTIONAL dependency behavior
+    * DependencyResolver: Automatic resolution engine
+    * TaskContext: Source of dependency data
+    * Built-in transform utilities: extract_urls_from_results, etc.
+
+"""
 
     def __init__(
         self,

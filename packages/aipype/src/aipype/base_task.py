@@ -5,7 +5,7 @@ BaseTask is the abstract base class that all task implementations must inherit
 from. It provides standardized interfaces for task execution, validation,
 status tracking, and error handling.
 
-Key Features:
+Key Features
 
 #. **TaskResult Pattern**: All tasks return structured results instead of raising exceptions
 #. **Validation Framework**: Declarative configuration validation with detailed error messages

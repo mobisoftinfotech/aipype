@@ -6,10 +6,11 @@ execution phases based on their dependencies, enabling optimal performance and
 data flow between tasks.
 
 Key Concepts:
-    * **Dependency Resolution**: Tasks automatically receive data from dependent tasks
-    * **Execution Phases**: Tasks are grouped for optimal parallel/sequential execution
-    * **Task Context**: Shared data store for inter-task communication
-    * **Error Handling**: TaskResult pattern for graceful error propagation
+
+* **Dependency Resolution**: Tasks automatically receive data from dependent tasks
+* **Execution Phases**: Tasks are grouped for optimal parallel/sequential execution
+* **Task Context**: Shared data store for inter-task communication
+* **Error Handling**: TaskResult pattern for graceful error propagation
 
 **Quick Example**
 
@@ -45,6 +46,7 @@ See Also:
     * TaskDependency: Declarative dependency specification
     * TaskContext: Shared data store for task communication
     * AgentRunResult: Standardized execution result format
+
 """
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -254,7 +256,7 @@ class PipelineAgent:
     error handling, and result collection. Users inherit from this class and
     implement setup_tasks() to define their workflow.
 
-    Key Features:
+    Key Features
         * **Automatic Dependency Resolution**: Tasks receive data from previous tasks
         * **Parallel Execution**: Independent tasks run simultaneously for performance
         * **Error Handling**: Graceful handling of task failures with detailed reporting
@@ -402,7 +404,7 @@ run() returns AgentRunResult with:
             * TaskDependency: Declarative dependency specification
             * TaskContext: Shared data store for inter-task communication
             * AgentRunResult: Standardized execution result format
-        
+
         """
         self.name = name
         self.config = config or {}
@@ -465,7 +467,8 @@ run() returns AgentRunResult with:
                 List of configured BaseTask instances that define the workflow.
 
         Example:
-            Basic search and summarize workflow::
+            Basic search and summarize workflow:
+
                 .. code-block:: python
 
                     def setup_tasks(self):
@@ -483,7 +486,8 @@ run() returns AgentRunResult with:
                             ])
                         ]
 
-            Complex workflow with conditional logic::
+            Complex workflow with conditional logic:
+
                 .. code-block:: python
 
                     def setup_tasks(self):
@@ -568,6 +572,7 @@ run() returns AgentRunResult with:
         """Execute the complete workflow with automatic task orchestration.
 
         This is the main execution method that runs the entire pipeline:
+
         1. Builds execution plan from task dependencies
         2. Resolves dependencies and updates task configurations
         3. Executes tasks in phases (parallel within phases, sequential between phases)
@@ -579,97 +584,103 @@ run() returns AgentRunResult with:
         Individual task failures are captured and the pipeline can continue
         based on the stop_on_failure configuration.
 
-        Returns:
-            AgentRunResult containing:
+        The method returns `AgentRunResult` containing:
 
-            - status: SUCCESS (all tasks completed), PARTIAL (some failed),
-              ERROR (all failed), or RUNNING (already executing)
+            - status: 
+                - SUCCESS (all tasks completed), 
+                - PARTIAL (some failed),
+                - ERROR (all failed), 
+                - RUNNING (already executing)
             - completed_tasks: Number of successfully completed tasks
             - failed_tasks: Number of tasks that failed
             - total_phases: Number of execution phases used
             - execution_time: Total runtime in seconds
             - metadata: Additional execution information
 
-**Example**
+        **Exceptions**
 
-**Basic execution and result checking:**
+        No exceptions are raised directly. All operational errors are
+        captured in the returned AgentRunResult. Only programming errors
+        (like missing setup_tasks implementation) will raise exceptions.
+            
+        **Example**
 
-.. code-block:: python
+        **Basic execution and result checking:**
 
-    agent = MyAgent("processor", config)
-    result = agent.run()
+        .. code-block:: python
 
-    if result.is_success():
-        print(f"All {result.completed_tasks} tasks completed successfully")
+            agent = MyAgent("processor", config)
+            result = agent.run()
 
-        # Access individual task results
-        search_data = agent.context.get_result("search_task")
-        processed_data = agent.context.get_result("process_task")
+            if result.is_success():
+                print(f"All {result.completed_tasks} tasks completed successfully")
 
-    elif result.is_partial():
-        print(f"Partial success: {result.completed_tasks}/{result.total_tasks}")
-        print(f"Failed tasks: {result.failed_tasks}")
+                # Access individual task results
+                search_data = agent.context.get_result("search_task")
+                processed_data = agent.context.get_result("process_task")
 
-    else:  # result.is_error()
-        print(f"Pipeline failed: {result.error_message}")
+            elif result.is_partial():
+                print(f"Partial success: {result.completed_tasks}/{result.total_tasks}")
+                print(f"Failed tasks: {result.failed_tasks}")
 
-**Performance monitoring:**
+            else:  # result.is_error()
+                print(f"Pipeline failed: {result.error_message}")
 
-.. code-block:: python
+        **Performance monitoring:**
 
-    result = agent.run()
-    print(f"Execution time: {result.execution_time:.2f}s")
-    print(f"Phases used: {result.total_phases}")
+        .. code-block:: python
 
-    # Check if parallel execution was effective
-    if result.total_phases < len(agent.tasks):
-        print("Parallel execution optimized the pipeline")
+            result = agent.run()
+            print(f"Execution time: {result.execution_time:.2f}s")
+            print(f"Phases used: {result.total_phases}")
 
-**Execution Phases**
+            # Check if parallel execution was effective
+            if result.total_phases < len(agent.tasks):
+                print("Parallel execution optimized the pipeline")
 
-Tasks are automatically organized into phases based on dependencies:
+        **Execution Phases**
 
-- **Phase 1**: Tasks with no dependencies
-- **Phase 2**: Tasks depending only on Phase 1 tasks
-- **Phase N**: Tasks depending on previous phases only
+        Tasks are automatically organized into phases based on dependencies:
 
-Within each phase, tasks can execute in parallel (if enabled).
-Between phases, execution is sequential to maintain dependency order.
+        - **Phase 1**: Tasks with no dependencies
+        - **Phase 2**: Tasks depending only on Phase 1 tasks
+        - **Phase N**: Tasks depending on previous phases only
 
-**Error Handling**
+        Within each phase, tasks can execute in parallel (if enabled).
+        Between phases, execution is sequential to maintain dependency order.
 
-* Individual task errors are captured in TaskResult objects
-* Pipeline can continue or stop based on stop_on_failure config
-* Partial success is supported when some tasks succeed
-* All errors are logged with detailed context information
-* Failed task dependencies propagate to dependent tasks
+        **Error Handling**
 
-**Thread Safety**
+        * Individual task errors are captured in TaskResult objects
+        * Pipeline can continue or stop based on stop_on_failure config
+        * Partial success is supported when some tasks succeed
+        * All errors are logged with detailed context information
+        * Failed task dependencies propagate to dependent tasks
 
-This method is not thread-safe. Each agent instance should only
-execute one pipeline at a time. Concurrent task execution within
-the pipeline is handled internally with ThreadPoolExecutor.
+        **Thread Safety**
 
-**Performance**
+        This method is not thread-safe. Each agent instance should only
+        execute one pipeline at a time. Concurrent task execution within
+        the pipeline is handled internally with ThreadPoolExecutor.
 
-* Parallel execution significantly improves performance for independent tasks
-* Dependency resolution optimizes execution order
-* Thread pool size controlled by max_parallel_tasks config
-* Memory usage scales with number of concurrent tasks
+        **Performance**
+
+        * Parallel execution significantly improves performance for independent tasks
+        * Dependency resolution optimizes execution order
+        * Thread pool size controlled by max_parallel_tasks config
+        * Memory usage scales with number of concurrent tasks
 
         Note:
             If the agent is already running, this method returns immediately
             with a RUNNING status to prevent concurrent execution conflicts.
 
-        Raises:
-            No exceptions are raised directly. All operational errors are
-            captured in the returned AgentRunResult. Only programming errors
-            (like missing setup_tasks implementation) will raise exceptions.
-
         See Also:
             - AgentRunResult: For detailed result format and status checking
             - TaskContext: Access via agent.context for individual task results
             - TaskExecutionPlan: For understanding execution phase organization
+
+        Returns:
+            AgentRunResult
         """
         if self._is_running:
             self.logger.warning(f"PipelineAgent '{self.name}' is already running")

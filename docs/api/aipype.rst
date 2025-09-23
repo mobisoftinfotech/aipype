@@ -19,14 +19,6 @@ Pipeline Agent
    :undoc-members:
    :show-inheritance:
 
-Base Task
----------
-
-.. automodule:: aipype.base_task
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 Task Types
 ----------
 

@@ -4,7 +4,7 @@ This module provides LLMTask, a sophisticated task for integrating Large Languag
 into AI pipelines. It supports automatic prompt template substitution using dependency
 data, tool/function calling, multiple LLM providers, and comprehensive response handling.
 
-Key Features:
+Key Features
     * **Template Substitution**: Dynamic prompt generation using ${variable} syntax
     * **Tool Calling**: Function calling with automatic tool registration and execution
     * **Multi-Provider**: Support for OpenAI, Anthropic, Ollama, and other LLM providers
@@ -393,10 +393,10 @@ See Also:
                   "openai", "anthropic", "ollama", "azure", "google", "cohere", etc.
                 - llm_model (str): Model identifier specific to the provider:
 
-                  - OpenAI: "gpt-4", "gpt-3.5-turbo", "gpt-4-turbo-preview"
-                  - Anthropic: "claude-3-opus", "claude-3-sonnet", "claude-3-haiku"
-                  - Ollama: "llama2", "mistral", "codellama"
-                  - Google: "gemini-pro", "gemini-pro-vision"
+                  * OpenAI: "gpt-4", "gpt-3.5-turbo", "gpt-4-turbo-preview"
+                  * Anthropic: "claude-3-opus", "claude-3-sonnet", "claude-3-haiku"
+                  * Ollama: "llama2", "mistral", "codellama"
+                  * Google: "gemini-pro", "gemini-pro-vision"
 
                 **Prompt Configuration:**
 
@@ -427,75 +427,89 @@ See Also:
                 Template variables in prompt, context, and role fields will be
                 automatically replaced with resolved dependency values.
 
-        Example:
-            Basic text generation::
+        **Examples**
+        
+        Basic text generation
 
-                LLMTask("summarizer", {
-                    "prompt": "Summarize this text: ${content}",
-                    "llm_provider": "openai",
-                    "llm_model": "gpt-4",
-                    "temperature": 0.3,
-                    "max_tokens": 500
-                }, dependencies=[
-                    TaskDependency("content", "input.text", REQUIRED)
-                ])
+        .. code-block:: python
 
-            Advanced with tools and context::
+            LLMTask("summarizer", {
+                "prompt": "Summarize this text: ${content}",
+                "llm_provider": "openai",
+                "llm_model": "gpt-4",
+                "temperature": 0.3,
+                "max_tokens": 500
+            }, dependencies=[
+                TaskDependency("content", "input.text", REQUIRED)
+            ])
 
-                @tool
-                def web_search(query: str) -> Dict[str, Any]:
-                    return {"results": search_engine.search(query)}
+        Advanced with tools and context:
 
-                LLMTask("researcher", {
-                    "prompt": "Research ${topic} and provide analysis",
-                    "context": "You are an expert ${field} researcher with access to web search",
-                    "llm_provider": "anthropic",
-                    "llm_model": "claude-3-opus",
-                    "tools": [web_search],
-                    "tool_choice": "auto",
-                    "temperature": 0.5,
-                    "max_tokens": 3000
-                }, dependencies=[
-                    TaskDependency("topic", "config.research_topic", REQUIRED),
-                    TaskDependency("field", "config.expertise_field", REQUIRED)
-                ])
+        .. code-block:: python
 
-            Local model with Ollama::
+            @tool
+            def web_search(query: str) -> Dict[str, Any]:
+                return {"results": search_engine.search(query)}
 
-                LLMTask("local_chat", {
-                    "prompt": "Help with this question: ${question}",
-                    "llm_provider": "ollama",
-                    "llm_model": "llama2",
-                    "temperature": 0.8,
-                    "max_tokens": 2000
-                })
+            LLMTask("researcher", {
+                "prompt": "Research ${topic} and provide analysis",
+                "context": "You are an expert ${field} researcher with access to web search",
+                "llm_provider": "anthropic",
+                "llm_model": "claude-3-opus",
+                "tools": [web_search],
+                "tool_choice": "auto",
+                "temperature": 0.5,
+                "max_tokens": 3000
+            }, dependencies=[
+                TaskDependency("topic", "config.research_topic", REQUIRED),
+                TaskDependency("field", "config.expertise_field", REQUIRED)
+            ])
 
-        Template Variables:
-            Variables in prompt, context, and role fields use ${variable_name} syntax.
-            Resolution order:
+        Local model with Ollama:
+
+        .. code-block:: python
+
+            LLMTask("local_chat", {
+                "prompt": "Help with this question: ${question}",
+                "llm_provider": "ollama",
+                "llm_model": "llama2",
+                "temperature": 0.8,
+                "max_tokens": 2000
+            })
+
+        **Template Variables**
+
+        Variables in prompt, context, and role fields use `${variable_name}` syntax.
+        Resolution order:
+
             1. Dependency values (from TaskDependency objects)
             2. Direct config values
             3. Environment variables
             4. Error if required variable not found
 
-        Tool Integration:
-            Functions decorated with @tool are automatically:
+        **Tool Integration**
+
+        Functions decorated with @tool are automatically:
+
             1. Registered with the LLM provider
             2. Made available to the model during generation
             3. Executed when called by the model
             4. Results injected back into the conversation
 
-        Error Handling:
-            Configuration errors are caught during validation:
+        **Error Handling**
+
+        Configuration errors are caught during validation:
+
             - Missing required fields (llm_provider, llm_model)
             - Invalid parameter ranges (temperature, max_tokens)
             - Unsupported tool configurations
             - Provider-specific validation
 
-        Environment Variables:
-            API keys can be provided via environment variables:
+        **Environment Variables**
+
+        API keys can be provided via environment variables:
+
             - OPENAI_API_KEY for OpenAI
-            - ANTHROPIC_API_KEY for Anthropic
             - GOOGLE_API_KEY for Google
             - Etc.
 
