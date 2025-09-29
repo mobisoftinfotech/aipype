@@ -178,3 +178,16 @@ texinfo_documents = [
 # Extension settings
 add_module_names = False
 python_use_unqualified_type_names = True
+
+
+def autodoc_skip_member(app, what, name, obj, skip, options):
+    """Skip specific members from documentation."""
+    # Skip URLFetcher class attributes that we don't want documented
+    if name in ("DEFAULT_HEADERS", "DEFAULT_USER_AGENT"):
+        return True
+    return skip
+
+
+def setup(app):
+    """Setup function for Sphinx."""
+    app.connect("autodoc-skip-member", autodoc_skip_member)

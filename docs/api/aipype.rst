@@ -115,3 +115,11 @@ Tools
    :members:
    :undoc-members:
    :show-inheritance:
+
+URL Fetcher
+^^^^^^^^^^^
+
+.. autoclass:: aipype.utils.url_fetcher.URLFetcher
+   :members:
+   :undoc-members:
+   :exclude-members: DEFAULT_HEADERS, DEFAULT_USER_AGENT
