@@ -26,12 +26,12 @@ class TransformTask(BaseTask):
             dependencies: List of task dependencies
 
         Config parameters:
-        - transform_function: Function to apply transformation
-        - input_field: Single input field name (for single-input transforms)
-        - input_fields: List of input field names (for multi-input transforms)
-        - output_name: Name for the output in the result
-        - validate_input: Whether to validate input data (default: True)
-        - validate_output: Whether to validate output data (default: False)
+            * transform_function: Function to apply transformation
+            * input_field: Single input field name (for single-input transforms)
+            * input_fields: List of input field names (for multi-input transforms)
+            * output_name: Name for the output in the result
+            * validate_input: Whether to validate input data (default: True)
+            * validate_output: Whether to validate output data (default: False)
         """
         super().__init__(name, config, dependencies)
         self.validation_rules = {

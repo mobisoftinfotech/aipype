@@ -65,10 +65,11 @@ class TaskExecutionPlan:
     """Execution plan that organizes tasks into phases based on dependencies.
 
 This class analyzes task dependencies and creates an optimal execution plan where:
-* Tasks with no dependencies run in the first phase
-* Tasks whose dependencies are satisfied run in subsequent phases
-* Tasks within the same phase can run in parallel
-* Phases execute sequentially to maintain dependency ordering
+
+    * Tasks with no dependencies run in the first phase
+    * Tasks whose dependencies are satisfied run in subsequent phases
+    * Tasks within the same phase can run in parallel
+    * Phases execute sequentially to maintain dependency ordering
 
 The plan automatically detects and rejects circular dependencies, ensuring
 all workflows can execute successfully.

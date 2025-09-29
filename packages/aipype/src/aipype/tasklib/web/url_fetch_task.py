@@ -24,9 +24,11 @@ class URLFetchTask(BaseTask):
         Args:
             name: Task name
             config: Configuration dictionary containing:
+
                 - urls: List of URLs to fetch (optional, can be resolved from dependencies)
                 - max_urls: Maximum number of URLs to process (default: 5)
                 - timeout: Request timeout in seconds (default: 30)
+
             dependencies: List of task dependencies
         """
         super().__init__(name, config)

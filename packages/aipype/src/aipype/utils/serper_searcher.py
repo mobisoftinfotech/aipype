@@ -24,11 +24,12 @@ class SerperSearcher(BaseSearcher):
         - api_key: Serper API key (or SERPER_API_KEY environment variable)
 
         Optional config parameters:
-        - timeout: Request timeout in seconds (default: 30)
-        - country: Country code for search results (e.g., 'us', 'uk')
-        - language: Language code for search results (e.g., 'en', 'es')
-        - safe_search: Safe search setting ('active', 'moderate', 'off')
-        - search_type: Type of search ('search', 'images', 'videos', 'places', 'news')
+
+            - timeout: Request timeout in seconds (default: 30)
+            - country: Country code for search results (e.g., 'us', 'uk')
+            - language: Language code for search results (e.g., 'en', 'es')
+            - safe_search: Safe search setting ('active', 'moderate', 'off')
+            - search_type: Type of search ('search', 'images', 'videos', 'places', 'news')
         """
         super().__init__(config)
 

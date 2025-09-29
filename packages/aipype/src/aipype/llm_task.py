@@ -184,39 +184,39 @@ class ChatMessage(TypedDict):
 class LLMTask(BaseTask):
     """Advanced LLM integration task with template substitution and tool calling.
 
-    LLMTask provides sophisticated Large Language Model integration for AI pipelines.
-    It supports dynamic prompt generation through template substitution, automatic
-    function/tool calling, and seamless integration with multiple LLM providers.
+LLMTask provides sophisticated Large Language Model integration for AI pipelines.
+It supports dynamic prompt generation through template substitution, automatic
+function/tool calling, and seamless integration with multiple LLM providers.
 
-    The task automatically resolves template variables from dependency data and
-    manages the complete LLM interaction lifecycle including request formatting,
-    response parsing, tool execution, and error handling.
+The task automatically resolves template variables from dependency data and
+manages the complete LLM interaction lifecycle including request formatting,
+response parsing, tool execution, and error handling.
 
-    Core Capabilities:
-        * **Dynamic Prompts**: ${variable} template substitution from dependencies
-        * **Tool Integration**: Automatic function calling with @tool decorated functions
-        * **Multi-Provider**: Support for 50+ LLM providers via litellm
-        * **Response Processing**: Structured response parsing and validation
-        * **Error Recovery**: Graceful handling of API failures and timeouts
-        * **Usage Tracking**: Detailed token usage and cost monitoring
+Core Capabilities:
+    * **Dynamic Prompts**: ${variable} template substitution from dependencies
+    * **Tool Integration**: Automatic function calling with @tool decorated functions
+    * **Multi-Provider**: Support for 50+ LLM providers via litellm
+    * **Response Processing**: Structured response parsing and validation
+    * **Error Recovery**: Graceful handling of API failures and timeouts
+    * **Usage Tracking**: Detailed token usage and cost monitoring
 
-    Template Substitution:
-        Templates use ${variable_name} syntax and are resolved from:
+Template Substitution:
+    Templates use ${variable_name} syntax and are resolved from:
         1. Task dependencies (via TaskDependency)
         2. Task configuration values
         3. Environment variables (as fallback)
 
-        Template fields support:
+    Template fields support:
         * prompt/prompt_template: Main user message
         * context: System/context message
         * role: User role description
 
-    Tool Calling Workflow:
-        1. Functions decorated with @tool are automatically registered
-        2. LLM decides which tools to call based on prompt
-        3. Tools execute with validated parameters
-        4. Results injected back into conversation
-        5. LLM continues with tool results
+Tool Calling Workflow:
+    1. Functions decorated with @tool are automatically registered
+    2. LLM decides which tools to call based on prompt
+    3. Tools execute with validated parameters
+    4. Results injected back into conversation
+    5. LLM continues with tool results
 
 **Provider Configuration**
 
@@ -231,30 +231,12 @@ Different providers require different configuration:
         "max_tokens": 1000
     }
 
-**Anthropic**::
-
-    {
-        "llm_provider": "anthropic",
-        "llm_model": "claude-3-opus-20240229",
-        "temperature": 0.5,
-        "max_tokens": 2000
-    }
-
 **Ollama (local)**::
 
     {
         "llm_provider": "ollama",
         "llm_model": "llama2",
         "temperature": 0.8
-    }
-
-**Azure OpenAI**::
-
-    {
-        "llm_provider": "azure",
-        "llm_model": "deployment-name",
-        "api_base": "https://your-resource.openai.azure.com/",
-        "api_version": "2023-05-15"
     }
 
 **Response Structure**

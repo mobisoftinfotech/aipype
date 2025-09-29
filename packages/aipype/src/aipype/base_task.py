@@ -367,17 +367,9 @@ Attributes Initialized:
     def run(self) -> TaskResult:
         """Execute the task and return a structured result.
 
-        This is the main method that subclasses must implement to perform
-        their specific functionality. The method should follow the TaskResult
-        pattern for error handling and return structured results.
-
-        Returns:
-            TaskResult containing:
-            * status: SUCCESS, PARTIAL, ERROR, or SKIPPED
-            * data: Result data (dict) if successful, None if failed
-            * error: Error message if failed, None if successful
-            * execution_time: Time taken to execute in seconds
-            * metadata: Additional information about execution
+This is the main method that subclasses must implement to perform
+their specific functionality. The method should follow the TaskResult
+pattern for error handling and return structured results.
 
 **Implementation Guidelines**
 
@@ -431,6 +423,13 @@ Attributes Initialized:
 * **Failure**: Task could not complete due to errors
 * **Skipped**: Task was skipped due to conditions not being met
 
+A returned TaskResult contains:
+    * status: SUCCESS, PARTIAL, ERROR, or SKIPPED
+    * data: Result data (dict) if successful, None if failed
+    * error: Error message if failed, None if successful
+    * execution_time: Time taken to execute in seconds
+    * metadata: Additional information about execution
+
 **Example Implementation**
 
 .. code-block:: python
@@ -468,17 +467,21 @@ Attributes Initialized:
                 metadata={"error_type": "FileNotFoundError"}
             )
 
-        Note:
-            * Never raise exceptions for operational errors
-            * Always calculate and include execution_time
-            * Use descriptive error messages that help users understand issues
-            * Include relevant metadata for debugging and monitoring
+Note:
+    * Never raise exceptions for operational errors
+    * Always calculate and include execution_time
+    * Use descriptive error messages that help users understand issues
+    * Include relevant metadata for debugging and monitoring
 
-        See Also:
-            * TaskResult: For understanding return value structure
-            * _validate_or_fail(): For configuration validation pattern
-            * Task-specific implementations for concrete examples
-        """
+Returns:
+    TaskResult
+
+See Also:
+    * TaskResult: For understanding return value structure
+    * _validate_or_fail(): For configuration validation pattern
+    * Task-specific implementations for concrete examples
+
+"""
         pass
 
     def get_status(self) -> TaskStatus:

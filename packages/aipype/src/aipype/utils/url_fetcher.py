@@ -116,7 +116,9 @@ def _detect_encoding(
 
 
 class URLFetcher:
-    """Utility class for fetching web content with Chrome-like behavior."""
+    """Utility class for fetching web content with Chrome-like behavior.
+    
+"""
 
     # Chrome-like user agent string (Chrome 121 on Windows 10)
     DEFAULT_USER_AGENT = (
@@ -147,11 +149,13 @@ class URLFetcher:
 
         Args:
             config: Optional configuration dictionary with options:
+
                 - timeout: Request timeout in seconds (default: 30)
                 - user_agent: Custom user agent string
                 - headers: Additional headers to include
                 - follow_redirects: Whether to follow redirects (default: True)
                 - max_redirects: Maximum number of redirects (default: 10)
+
         """
         self.config = config or {}
         self.timeout = self.config.get("timeout", 30)
