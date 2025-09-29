@@ -251,28 +251,28 @@ Returns:
 class PipelineAgent:
     """Main agent class for building AI workflows with automatic task orchestration.
 
-    PipelineAgent is the primary interface for creating AI automation workflows.
-    It automatically handles task dependency resolution, parallel execution,
-    error handling, and result collection. Users inherit from this class and
-    implement setup_tasks() to define their workflow.
+PipelineAgent is the primary interface for creating AI automation workflows.
+It automatically handles task dependency resolution, parallel execution,
+error handling, and result collection. Users inherit from this class and
+implement setup_tasks() to define their workflow.
 
-    Key Features
-        * **Automatic Dependency Resolution**: Tasks receive data from previous tasks
-        * **Parallel Execution**: Independent tasks run simultaneously for performance
-        * **Error Handling**: Graceful handling of task failures with detailed reporting
-        * **Context Management**: Shared data store for inter-task communication
-        * **Result Tracking**: Comprehensive execution metrics and status reporting
+Key Features
+    * **Automatic Dependency Resolution**: Tasks receive data from previous tasks
+    * **Parallel Execution**: Independent tasks run simultaneously for performance
+    * **Error Handling**: Graceful handling of task failures with detailed reporting
+    * **Context Management**: Shared data store for inter-task communication
+    * **Result Tracking**: Comprehensive execution metrics and status reporting
 
-    Configuration Options:
-        * enable_parallel (bool): Enable parallel task execution (default: True)
-        * max_parallel_tasks (int): Maximum concurrent tasks (default: 5)
-        * stop_on_failure (bool): Stop pipeline on first failure (default: True)
+Configuration Options:
+    * enable_parallel (bool): Enable parallel task execution (default: True)
+    * max_parallel_tasks (int): Maximum concurrent tasks (default: 5)
+    * stop_on_failure (bool): Stop pipeline on first failure (default: True)
 
-    Lifecycle:
-        1. **Initialization**: Agent created with name and config
-        2. **Task Setup**: setup_tasks() called to define workflow
-        3. **Execution**: run() method orchestrates task execution
-        4. **Results**: AgentRunResult returned with status and metrics
+Lifecycle:
+    1. **Initialization**: Agent created with name and config
+    2. **Task Setup**: setup_tasks() called to define workflow
+    3. **Execution**: run() method orchestrates task execution
+    4. **Results**: AgentRunResult returned with status and metrics
 
 **Example**
 
@@ -356,56 +356,59 @@ run() returns AgentRunResult with:
 * ThreadPoolExecutor manages concurrent task execution
 * Configurable concurrency limits prevent resource exhaustion
 
-    """
+"""
 
     def __init__(self, name: str, config: Optional[Dict[str, Any]] = None):
         """Initialize pipeline agent with name and configuration.
 
-        Creates a new pipeline agent instance with automatic task setup.
-        The agent will call setup_tasks() during initialization to configure
-        the workflow. TaskContext and DependencyResolver are created automatically.
+Creates a new pipeline agent instance with automatic task setup.
+The agent will call setup_tasks() during initialization to configure
+the workflow. TaskContext and DependencyResolver are created automatically.
 
-        Args:
-            name: Unique identifier for this agent instance. Used in logging
-                and result tracking. Should be descriptive of the agent's purpose.
-            config: Configuration dictionary with agent settings:
+Attributes Created:
 
-                * enable_parallel (bool): Enable parallel task execution (default: True)
-                * max_parallel_tasks (int): Maximum concurrent tasks (default: 5)
-                * stop_on_failure (bool): Stop pipeline on first failure (default: True)
+    * name: Agent identifier
+    * config: Configuration dictionary
+    * tasks: List of tasks (populated by setup_tasks())
+    * context: TaskContext for inter-task communication
+    * dependency_resolver: Handles dependency resolution
+    * execution_plan: Created during run() execution
 
-                Additional config keys are passed to tasks via self.config.
+Args:
+    name: Unique identifier for this agent instance. Used in logging
+        and result tracking. Should be descriptive of the agent's purpose.
+    config: Configuration dictionary with agent settings:
 
-        Attributes Created:
-            * name: Agent identifier
-            * config: Configuration dictionary
-            * tasks: List of tasks (populated by setup_tasks())
-            * context: TaskContext for inter-task communication
-            * dependency_resolver: Handles dependency resolution
-            * execution_plan: Created during run() execution
+        * enable_parallel (bool): Enable parallel task execution (default: True)
+        * max_parallel_tasks (int): Maximum concurrent tasks (default: 5)
+        * stop_on_failure (bool): Stop pipeline on first failure (default: True)
 
-        Example:
-            .. code-block:: python
+    Additional config keys are passed to tasks via self.config.
 
-                agent = MyAgent("data_processor", {
-                    "enable_parallel": True,
-                    "max_parallel_tasks": 3,
-                    "input_file": "data.csv"
-                })
-                print(f"Agent {agent.name} has {len(agent.tasks)} tasks")
+Example:
 
-        Note:
-            The agent automatically calls setup_tasks() during initialization.
-            If setup_tasks() raises an exception, the agent will log a warning
-            but continue with an empty task list.
+.. code-block:: python
 
-        See Also:
-            * BaseTask: Base class for implementing custom tasks
-            * TaskDependency: Declarative dependency specification
-            * TaskContext: Shared data store for inter-task communication
-            * AgentRunResult: Standardized execution result format
+    agent = MyAgent("data_processor", {
+        "enable_parallel": True,
+        "max_parallel_tasks": 3,
+        "input_file": "data.csv"
+    })
+    print(f"Agent {agent.name} has {len(agent.tasks)} tasks")
 
-        """
+Note:
+    The agent automatically calls setup_tasks() during initialization.
+    If setup_tasks() raises an exception, the agent will log a warning
+    but continue with an empty task list.
+
+See Also:
+
+    * BaseTask: Base class for implementing custom tasks
+    * TaskDependency: Declarative dependency specification
+    * TaskContext: Shared data store for inter-task communication
+    * AgentRunResult: Standardized execution result format
+
+"""
         self.name = name
         self.config = config or {}
         self.tasks: List[BaseTask] = []
