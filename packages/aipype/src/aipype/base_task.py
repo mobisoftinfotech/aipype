@@ -106,132 +106,132 @@ if TYPE_CHECKING:
 class BaseTask(ABC):
     """Abstract base class for all task implementations in the aipype framework.
 
-BaseTask provides the foundation for creating custom tasks that can be
-orchestrated by PipelineAgent. It handles common concerns like validation,
-status tracking, error handling, and dependency management, allowing
-subclasses to focus on their specific functionality.
+    BaseTask provides the foundation for creating custom tasks that can be
+    orchestrated by PipelineAgent. It handles common concerns like validation,
+    status tracking, error handling, and dependency management, allowing
+    subclasses to focus on their specific functionality.
 
-All tasks follow the TaskResult pattern where operational errors are
-returned as structured results rather than raised as exceptions. This
-enables graceful error handling and pipeline continuation.
+    All tasks follow the TaskResult pattern where operational errors are
+    returned as structured results rather than raised as exceptions. This
+    enables graceful error handling and pipeline continuation.
 
-Attributes:
-    name: Unique identifier for this task instance
-    config: Configuration dictionary with task-specific parameters
-    dependencies: List of TaskDependency objects for data flow
-    validation_rules: Optional validation rules for configuration
-    agent_name: Name of the parent agent (set automatically)
-    logger: Task-specific logger instance
+    Attributes:
+        name: Unique identifier for this task instance
+        config: Configuration dictionary with task-specific parameters
+        dependencies: List of TaskDependency objects for data flow
+        validation_rules: Optional validation rules for configuration
+        agent_name: Name of the parent agent (set automatically)
+        logger: Task-specific logger instance
 
-Abstract Methods:
-    run(): Must be implemented by subclasses to perform task work
+    Abstract Methods:
+        run(): Must be implemented by subclasses to perform task work
 
-**Common Patterns**
+    **Common Patterns**
 
-**Configuration validation:**
+    **Configuration validation:**
 
-.. code-block:: python
+    .. code-block:: python
 
-    class MyTask(BaseTask):
-        def __init__(self, name, config, dependencies=None):
-            super().__init__(name, config, dependencies)
-            self.validation_rules = {
-                "required": ["api_key", "endpoint"],
-                "optional": ["timeout", "retries"],
-                "defaults": {"timeout": 30, "retries": 3},
-                "types": {
-                    "api_key": str,
-                    "endpoint": str,
-                    "timeout": int,
-                    "retries": int
-                },
-                "ranges": {
-                    "timeout": (1, 300),
-                    "retries": (0, 10)
+        class MyTask(BaseTask):
+            def __init__(self, name, config, dependencies=None):
+                super().__init__(name, config, dependencies)
+                self.validation_rules = {
+                    "required": ["api_key", "endpoint"],
+                    "optional": ["timeout", "retries"],
+                    "defaults": {"timeout": 30, "retries": 3},
+                    "types": {
+                        "api_key": str,
+                        "endpoint": str,
+                        "timeout": int,
+                        "retries": int
+                    },
+                    "ranges": {
+                        "timeout": (1, 300),
+                        "retries": (0, 10)
+                    }
                 }
-            }
 
-**Error handling with TaskResult:**
+    **Error handling with TaskResult:**
 
-.. code-block:: python
-
-    def run(self) -> TaskResult:
-        start_time = datetime.now()
-
-        # Always validate first
-        validation_failure = self._validate_or_fail(start_time)
-        if validation_failure:
-            return validation_failure
-
-        try:
-            # Perform task work
-            result = self.do_work()
-            execution_time = (datetime.now() - start_time).total_seconds()
-
-            return TaskResult.success(
-                data=result,
-                execution_time=execution_time,
-                metadata={"processed_items": len(result)}
-            )
-
-        except ApiError as e:
-            # Expected operational error
-            execution_time = (datetime.now() - start_time).total_seconds()
-            return TaskResult.failure(
-                error_message=f"API call failed: {str(e)}",
-                execution_time=execution_time,
-                metadata={"error_type": "ApiError", "retry_recommended": True}
-            )
-
-**Working with dependencies:**
-
-.. code-block:: python
-
-    class ProcessDataTask(BaseTask):
-        def __init__(self, name, config, dependencies=None):
-            super().__init__(name, config, dependencies)
-            # Dependencies will be resolved automatically before run()
+    .. code-block:: python
 
         def run(self) -> TaskResult:
-            # Access resolved dependency data
-            input_data = self.config.get("input_data")  # From dependency
-            processing_mode = self.config.get("mode", "default")  # From config
+            start_time = datetime.now()
 
-            # Process the data...
+            # Always validate first
+            validation_failure = self._validate_or_fail(start_time)
+            if validation_failure:
+                return validation_failure
 
-**Validation Rules**
+            try:
+                # Perform task work
+                result = self.do_work()
+                execution_time = (datetime.now() - start_time).total_seconds()
 
-Tasks can define validation_rules to automatically validate their
-configuration. The validation system supports:
+                return TaskResult.success(
+                    data=result,
+                    execution_time=execution_time,
+                    metadata={"processed_items": len(result)}
+                )
 
-* **required**: Keys that must be present
-* **optional**: Keys that are optional
-* **defaults**: Default values for missing optional keys
-* **types**: Expected Python types for values
-* **ranges**: (min, max) tuples for numeric validation
-* **custom**: Custom validation functions
+            except ApiError as e:
+                # Expected operational error
+                execution_time = (datetime.now() - start_time).total_seconds()
+                return TaskResult.failure(
+                    error_message=f"API call failed: {str(e)}",
+                    execution_time=execution_time,
+                    metadata={"error_type": "ApiError", "retry_recommended": True}
+                )
 
-**Status Management**
+    **Working with dependencies:**
 
-Task status is managed automatically:
+    .. code-block:: python
 
-* **NOT_STARTED**: Initial state
-* **RUNNING**: During execution (set by framework)
-* **SUCCESS**: Task completed successfully
-* **ERROR**: Task failed with error
-* **PARTIAL**: Task completed with partial success
+        class ProcessDataTask(BaseTask):
+            def __init__(self, name, config, dependencies=None):
+                super().__init__(name, config, dependencies)
+                # Dependencies will be resolved automatically before run()
 
-**Thread Safety**
+            def run(self) -> TaskResult:
+                # Access resolved dependency data
+                input_data = self.config.get("input_data")  # From dependency
+                processing_mode = self.config.get("mode", "default")  # From config
 
-Individual task instances are not thread-safe and should not be
-executed concurrently. However, different task instances can run
-in parallel safely.
+                # Process the data...
 
-    See Also:
-        * TaskResult: Return format for task execution
-        * TaskDependency: For creating task dependencies
-        * PipelineAgent: For orchestrating multiple tasks
-        * Validation documentation in utils.common module
+    **Validation Rules**
+
+    Tasks can define validation_rules to automatically validate their
+    configuration. The validation system supports:
+
+    * **required**: Keys that must be present
+    * **optional**: Keys that are optional
+    * **defaults**: Default values for missing optional keys
+    * **types**: Expected Python types for values
+    * **ranges**: (min, max) tuples for numeric validation
+    * **custom**: Custom validation functions
+
+    **Status Management**
+
+    Task status is managed automatically:
+
+    * **NOT_STARTED**: Initial state
+    * **RUNNING**: During execution (set by framework)
+    * **SUCCESS**: Task completed successfully
+    * **ERROR**: Task failed with error
+    * **PARTIAL**: Task completed with partial success
+
+    **Thread Safety**
+
+    Individual task instances are not thread-safe and should not be
+    executed concurrently. However, different task instances can run
+    in parallel safely.
+
+        See Also:
+            * TaskResult: Return format for task execution
+            * TaskDependency: For creating task dependencies
+            * PipelineAgent: For orchestrating multiple tasks
+            * Validation documentation in utils.common module
     """
 
     def __init__(
@@ -242,80 +242,80 @@ in parallel safely.
     ) -> None:
         """Initialize a new task instance with configuration and dependencies.
 
-Creates a new task with the specified configuration. The task will
-be initialized with default status and logging setup. Dependencies
-will be resolved automatically by the PipelineAgent before execution.
+        Creates a new task with the specified configuration. The task will
+        be initialized with default status and logging setup. Dependencies
+        will be resolved automatically by the PipelineAgent before execution.
 
-Args:
-    name: Unique identifier for this task within the agent. Must be
-        unique across all tasks in the same pipeline. Used for:
-        * Logging identification
-        * Dependency references (other_task.field)
-        * Result storage in TaskContext
-        * Status tracking and error reporting
-    config: Configuration dictionary containing task-specific parameters.
-        The exact keys depend on the task implementation. Common patterns:
-        * API credentials and endpoints
-        * File paths and processing options
-        * Behavioral flags and timeout values
-        * Data transformation parameters
-        Will be validated against validation_rules if defined.
-    dependencies: List of TaskDependency objects specifying how this
-        task receives data from other tasks. Dependencies are resolved
-        automatically before run() is called, with resolved data added
-        to the config dictionary. Use TaskDependency.create_required()
-        or TaskDependency.create_optional() for convenience.
+        Args:
+            name: Unique identifier for this task within the agent. Must be
+                unique across all tasks in the same pipeline. Used for:
+                * Logging identification
+                * Dependency references (other_task.field)
+                * Result storage in TaskContext
+                * Status tracking and error reporting
+            config: Configuration dictionary containing task-specific parameters.
+                The exact keys depend on the task implementation. Common patterns:
+                * API credentials and endpoints
+                * File paths and processing options
+                * Behavioral flags and timeout values
+                * Data transformation parameters
+                Will be validated against validation_rules if defined.
+            dependencies: List of TaskDependency objects specifying how this
+                task receives data from other tasks. Dependencies are resolved
+                automatically before run() is called, with resolved data added
+                to the config dictionary. Use TaskDependency.create_required()
+                or TaskDependency.create_optional() for convenience.
 
-Attributes Initialized:
-    * name: Task identifier
-    * config: Configuration dictionary (may be updated by dependencies)
-    * dependencies: List of dependency specifications
-    * validation_rules: Set by subclasses for configuration validation
-    * agent_name: Set automatically by PipelineAgent
-    * logger: Task-specific logger (task.{name})
-    * Status tracking fields for execution monitoring
+        Attributes Initialized:
+            * name: Task identifier
+            * config: Configuration dictionary (may be updated by dependencies)
+            * dependencies: List of dependency specifications
+            * validation_rules: Set by subclasses for configuration validation
+            * agent_name: Set automatically by PipelineAgent
+            * logger: Task-specific logger (task.{name})
+            * Status tracking fields for execution monitoring
 
-**Example**
+        **Example**
 
-**Basic task creation:**
+        **Basic task creation:**
 
-.. code-block:: python
+        .. code-block:: python
 
-    task = MyTask(
-        name="process_data",
-        config={
-            "input_file": "data.csv",
-            "output_format": "json",
-            "batch_size": 1000
-        }
-    )
+            task = MyTask(
+                name="process_data",
+                config={
+                    "input_file": "data.csv",
+                    "output_format": "json",
+                    "batch_size": 1000
+                }
+            )
 
-**Task with dependencies:**
+        **Task with dependencies:**
 
-.. code-block:: python
+        .. code-block:: python
 
-    task = TransformTask(
-        name="process_results",
-        config={
-            "transform_function": my_transform_func,
-            "output_name": "processed_data"
-        },
-        dependencies=[
-            TaskDependency("input_data", "search_task.results", REQUIRED),
-            TaskDependency("options", "config_task.settings", OPTIONAL)
-        ]
-    )
+            task = TransformTask(
+                name="process_results",
+                config={
+                    "transform_function": my_transform_func,
+                    "output_name": "processed_data"
+                },
+                dependencies=[
+                    TaskDependency("input_data", "search_task.results", REQUIRED),
+                    TaskDependency("options", "config_task.settings", OPTIONAL)
+                ]
+            )
 
-        Note:
-            * Task names should be descriptive and use snake_case
-            * Config validation occurs during run(), not during initialization
-            * Dependencies are resolved by PipelineAgent, not by the task itself
-            * Subclasses should call super().__init__() and set validation_rules
+                Note:
+                    * Task names should be descriptive and use snake_case
+                    * Config validation occurs during run(), not during initialization
+                    * Dependencies are resolved by PipelineAgent, not by the task itself
+                    * Subclasses should call super().__init__() and set validation_rules
 
-        See Also:
-            * TaskDependency: For creating task dependencies
-            * TaskResult: Return format from run() method
-            * Validation rules documentation for config validation format
+                See Also:
+                    * TaskDependency: For creating task dependencies
+                    * TaskResult: Return format from run() method
+                    * Validation rules documentation for config validation format
         """
         self.name = name
         self.config = config or {}
@@ -367,121 +367,121 @@ Attributes Initialized:
     def run(self) -> TaskResult:
         """Execute the task and return a structured result.
 
-This is the main method that subclasses must implement to perform
-their specific functionality. The method should follow the TaskResult
-pattern for error handling and return structured results.
+        This is the main method that subclasses must implement to perform
+        their specific functionality. The method should follow the TaskResult
+        pattern for error handling and return structured results.
 
-**Implementation Guidelines**
+        **Implementation Guidelines**
 
-#. **Validation First**: Always validate configuration before work:
+        #. **Validation First**: Always validate configuration before work:
 
-   .. code-block:: python
+           .. code-block:: python
 
-       def run(self) -> TaskResult:
-           start_time = datetime.now()
+               def run(self) -> TaskResult:
+                   start_time = datetime.now()
 
-           validation_failure = self._validate_or_fail(start_time)
-           if validation_failure:
-               return validation_failure
+                   validation_failure = self._validate_or_fail(start_time)
+                   if validation_failure:
+                       return validation_failure
 
-#. **Error Handling**: Use TaskResult pattern, not exceptions:
+        #. **Error Handling**: Use TaskResult pattern, not exceptions:
 
-   .. code-block:: python
+           .. code-block:: python
 
-       try:
-           result = self.do_work()
-           return TaskResult.success(data=result, execution_time=elapsed)
-       except ExpectedError as e:
-           return TaskResult.failure(error_message=str(e), execution_time=elapsed)
+               try:
+                   result = self.do_work()
+                   return TaskResult.success(data=result, execution_time=elapsed)
+               except ExpectedError as e:
+                   return TaskResult.failure(error_message=str(e), execution_time=elapsed)
 
-#. **Timing**: Always include execution timing:
+        #. **Timing**: Always include execution timing:
 
-   .. code-block:: python
+           .. code-block:: python
 
-       start_time = datetime.now()
-       # ... do work ...
-       execution_time = (datetime.now() - start_time).total_seconds()
+               start_time = datetime.now()
+               # ... do work ...
+               execution_time = (datetime.now() - start_time).total_seconds()
 
-#. **Metadata**: Include useful execution information:
+        #. **Metadata**: Include useful execution information:
 
-   .. code-block:: python
+           .. code-block:: python
 
-       return TaskResult.success(
-           data=result,
-           execution_time=execution_time,
-           metadata={
-               "processed_items": len(items),
-               "api_calls": call_count,
-               "cache_hits": cache_hits
-           }
-       )
+               return TaskResult.success(
+                   data=result,
+                   execution_time=execution_time,
+                   metadata={
+                       "processed_items": len(items),
+                       "api_calls": call_count,
+                       "cache_hits": cache_hits
+                   }
+               )
 
-**Return Patterns**
+        **Return Patterns**
 
-* **Success**: All work completed successfully
-* **Partial**: Some work completed, some failed (recoverable)
-* **Failure**: Task could not complete due to errors
-* **Skipped**: Task was skipped due to conditions not being met
+        * **Success**: All work completed successfully
+        * **Partial**: Some work completed, some failed (recoverable)
+        * **Failure**: Task could not complete due to errors
+        * **Skipped**: Task was skipped due to conditions not being met
 
-A returned TaskResult contains:
-    * status: SUCCESS, PARTIAL, ERROR, or SKIPPED
-    * data: Result data (dict) if successful, None if failed
-    * error: Error message if failed, None if successful
-    * execution_time: Time taken to execute in seconds
-    * metadata: Additional information about execution
+        A returned TaskResult contains:
+            * status: SUCCESS, PARTIAL, ERROR, or SKIPPED
+            * data: Result data (dict) if successful, None if failed
+            * error: Error message if failed, None if successful
+            * execution_time: Time taken to execute in seconds
+            * metadata: Additional information about execution
 
-**Example Implementation**
+        **Example Implementation**
 
-.. code-block:: python
+        .. code-block:: python
 
-    def run(self) -> TaskResult:
-        start_time = datetime.now()
+            def run(self) -> TaskResult:
+                start_time = datetime.now()
 
-        # Validate configuration
-        validation_failure = self._validate_or_fail(start_time)
-        if validation_failure:
-            return validation_failure
+                # Validate configuration
+                validation_failure = self._validate_or_fail(start_time)
+                if validation_failure:
+                    return validation_failure
 
-        try:
-            # Extract configuration
-            input_file = self.config["input_file"]
-            output_format = self.config.get("output_format", "json")
+                try:
+                    # Extract configuration
+                    input_file = self.config["input_file"]
+                    output_format = self.config.get("output_format", "json")
 
-            # Perform work
-            data = self.process_file(input_file)
-            formatted_data = self.format_output(data, output_format)
+                    # Perform work
+                    data = self.process_file(input_file)
+                    formatted_data = self.format_output(data, output_format)
 
-            execution_time = (datetime.now() - start_time).total_seconds()
+                    execution_time = (datetime.now() - start_time).total_seconds()
 
-            return TaskResult.success(
-                data={"processed_data": formatted_data, "format": output_format},
-                execution_time=execution_time,
-                metadata={"records_processed": len(data)}
-            )
+                    return TaskResult.success(
+                        data={"processed_data": formatted_data, "format": output_format},
+                        execution_time=execution_time,
+                        metadata={"records_processed": len(data)}
+                    )
 
-        except FileNotFoundError:
-            execution_time = (datetime.now() - start_time).total_seconds()
-            return TaskResult.failure(
-                error_message=f"Input file not found: {input_file}",
-                execution_time=execution_time,
-                metadata={"error_type": "FileNotFoundError"}
-            )
+                except FileNotFoundError:
+                    execution_time = (datetime.now() - start_time).total_seconds()
+                    return TaskResult.failure(
+                        error_message=f"Input file not found: {input_file}",
+                        execution_time=execution_time,
+                        metadata={"error_type": "FileNotFoundError"}
+                    )
 
-Note:
-    * Never raise exceptions for operational errors
-    * Always calculate and include execution_time
-    * Use descriptive error messages that help users understand issues
-    * Include relevant metadata for debugging and monitoring
+        Note:
+            * Never raise exceptions for operational errors
+            * Always calculate and include execution_time
+            * Use descriptive error messages that help users understand issues
+            * Include relevant metadata for debugging and monitoring
 
-Returns:
-    TaskResult
+        Returns:
+            TaskResult
 
-See Also:
-    * TaskResult: For understanding return value structure
-    * _validate_or_fail(): For configuration validation pattern
-    * Task-specific implementations for concrete examples
+        See Also:
+            * TaskResult: For understanding return value structure
+            * _validate_or_fail(): For configuration validation pattern
+            * Task-specific implementations for concrete examples
 
-"""
+        """
         pass
 
     def get_status(self) -> TaskStatus:

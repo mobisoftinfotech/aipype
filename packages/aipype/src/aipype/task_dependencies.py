@@ -85,22 +85,22 @@ from .utils.common import setup_logger
 class DependencyType(Enum):
     """Enumeration of dependency types for task data flow.
 
-Dependency types control how missing dependencies are handled:
+    Dependency types control how missing dependencies are handled:
 
-* REQUIRED: Task execution fails if dependency cannot be resolved
-* OPTIONAL: Default value used if dependency unavailable
+    * REQUIRED: Task execution fails if dependency cannot be resolved
+    * OPTIONAL: Default value used if dependency unavailable
 
-**Example**
+    **Example**
 
-.. code-block:: python
+    .. code-block:: python
 
-    # Required dependency - task fails if search_task not available
-    TaskDependency("query_results", "search_task.results", REQUIRED)
+        # Required dependency - task fails if search_task not available
+        TaskDependency("query_results", "search_task.results", REQUIRED)
 
-    # Optional dependency - uses default if config_task unavailable
-    TaskDependency("settings", "config_task.options", OPTIONAL, default_value={})
+        # Optional dependency - uses default if config_task unavailable
+        TaskDependency("settings", "config_task.options", OPTIONAL, default_value={})
 
-"""
+    """
 
     REQUIRED = "required"
     OPTIONAL = "optional"
@@ -109,123 +109,123 @@ Dependency types control how missing dependencies are handled:
 class TaskDependency:
     """Specification for automatic data flow between tasks in a pipeline.
 
-TaskDependency defines how a task receives data from other tasks in the
-pipeline. Dependencies are resolved automatically by the PipelineAgent
-before task execution, with resolved data added to the task's configuration.
+    TaskDependency defines how a task receives data from other tasks in the
+    pipeline. Dependencies are resolved automatically by the PipelineAgent
+    before task execution, with resolved data added to the task's configuration.
 
-The dependency system supports flexible path-based data access, optional
-data transformation, and both required and optional dependencies with
-appropriate error handling.
+    The dependency system supports flexible path-based data access, optional
+    data transformation, and both required and optional dependencies with
+    appropriate error handling.
 
-Core Components:
-    * **name**: Key in target task's config where resolved data is stored
-    * **source_path**: Dot-notation path to source data in TaskContext
-    * **dependency_type**: REQUIRED or OPTIONAL behavior for missing data
-    * **transform_func**: Optional function to process resolved data
-    * **default_value**: Fallback value for optional dependencies
+    Core Components:
+        * **name**: Key in target task's config where resolved data is stored
+        * **source_path**: Dot-notation path to source data in TaskContext
+        * **dependency_type**: REQUIRED or OPTIONAL behavior for missing data
+        * **transform_func**: Optional function to process resolved data
+        * **default_value**: Fallback value for optional dependencies
 
-Path Syntax:
-    * Source paths use dot notation to access nested data
-    * "task.field" - Direct field access
-    * "task.data.nested.value" - Nested object access
-    * "task.results[].url" - Array element extraction
-    * "task.metadata.statistics" - Metadata access
+    Path Syntax:
+        * Source paths use dot notation to access nested data
+        * "task.field" - Direct field access
+        * "task.data.nested.value" - Nested object access
+        * "task.results[].url" - Array element extraction
+        * "task.metadata.statistics" - Metadata access
 
-**Transform Functions**
+    **Transform Functions**
 
-Optional preprocessing of resolved data before injection:
+    Optional preprocessing of resolved data before injection:
 
-.. code-block:: python
+    .. code-block:: python
 
-    def extract_titles(articles):
-        return [article.get('title', 'Untitled') for article in articles]
+        def extract_titles(articles):
+            return [article.get('title', 'Untitled') for article in articles]
 
-    TaskDependency(
-        "titles",
-        "search.results",
-        REQUIRED,
-        transform_func=extract_titles
-    )
+        TaskDependency(
+            "titles",
+            "search.results",
+            REQUIRED,
+            transform_func=extract_titles
+        )
 
-**Common Patterns**
+    **Common Patterns**
 
-**Basic data passing:**
+    **Basic data passing:**
 
-.. code-block:: python
+    .. code-block:: python
 
-    TaskDependency("search_results", "search_task.results", REQUIRED)
+        TaskDependency("search_results", "search_task.results", REQUIRED)
 
-**Data transformation:**
+    **Data transformation:**
 
-.. code-block:: python
+    .. code-block:: python
 
-    TaskDependency(
-        "article_urls",
-        "search_task.results",
-        REQUIRED,
-        transform_func=lambda results: [r['url'] for r in results]
-    )
+        TaskDependency(
+            "article_urls",
+            "search_task.results",
+            REQUIRED,
+            transform_func=lambda results: [r['url'] for r in results]
+        )
 
-**Optional configuration:**
+    **Optional configuration:**
 
-.. code-block:: python
+    .. code-block:: python
 
-    TaskDependency(
-        "processing_options",
-        "config_task.settings",
-        OPTIONAL,
-        default_value={"batch_size": 100, "timeout": 30}
-    )
+        TaskDependency(
+            "processing_options",
+            "config_task.settings",
+            OPTIONAL,
+            default_value={"batch_size": 100, "timeout": 30}
+        )
 
-**Nested data access:**
+    **Nested data access:**
 
-.. code-block:: python
+    .. code-block:: python
 
-    TaskDependency("api_endpoint", "config_task.api.endpoints.primary", REQUIRED)
+        TaskDependency("api_endpoint", "config_task.api.endpoints.primary", REQUIRED)
 
-**Complex transformation:**
+    **Complex transformation:**
 
-.. code-block:: python
+    .. code-block:: python
 
-    def combine_and_filter(search_results):
-        # Filter recent articles and combine text
-        recent = [r for r in search_results if is_recent(r)]
-        return ' '.join(r.get('content', '') for r in recent)
+        def combine_and_filter(search_results):
+            # Filter recent articles and combine text
+            recent = [r for r in search_results if is_recent(r)]
+            return ' '.join(r.get('content', '') for r in recent)
 
-    TaskDependency(
-        "combined_content",
-        "search_task.results",
-        REQUIRED,
-        transform_func=combine_and_filter
-    )
+        TaskDependency(
+            "combined_content",
+            "search_task.results",
+            REQUIRED,
+            transform_func=combine_and_filter
+        )
 
-**Error Handling**
+    **Error Handling**
 
-* **Required dependencies**: Missing data causes task execution failure
-* **Optional dependencies**: Missing data uses default_value
-* **Transform errors**: Transform function exceptions cause dependency failure
-* **Path errors**: Invalid paths cause resolution failure with detailed messages
+    * **Required dependencies**: Missing data causes task execution failure
+    * **Optional dependencies**: Missing data uses default_value
+    * **Transform errors**: Transform function exceptions cause dependency failure
+    * **Path errors**: Invalid paths cause resolution failure with detailed messages
 
-**Best Practices**
+    **Best Practices**
 
-* Use descriptive names that indicate the data being passed
-* Prefer specific paths over broad data passing
-* Use transform functions to shape data for consuming tasks
-* Provide meaningful default values for optional dependencies
-* Document complex transform functions for maintainability
+    * Use descriptive names that indicate the data being passed
+    * Prefer specific paths over broad data passing
+    * Use transform functions to shape data for consuming tasks
+    * Provide meaningful default values for optional dependencies
+    * Document complex transform functions for maintainability
 
-**Thread Safety**
+    **Thread Safety**
 
-TaskDependency instances are immutable after creation and thread-safe.
-However, transform functions should be thread-safe if used in parallel execution.
+    TaskDependency instances are immutable after creation and thread-safe.
+    However, transform functions should be thread-safe if used in parallel execution.
 
-See Also:
-    * DependencyType: REQUIRED vs OPTIONAL dependency behavior
-    * DependencyResolver: Automatic resolution engine
-    * TaskContext: Source of dependency data
-    * Built-in transform utilities: extract_urls_from_results, etc.
+    See Also:
+        * DependencyType: REQUIRED vs OPTIONAL dependency behavior
+        * DependencyResolver: Automatic resolution engine
+        * TaskContext: Source of dependency data
+        * Built-in transform utilities: extract_urls_from_results, etc.
 
-"""
+    """
 
     def __init__(
         self,
@@ -239,111 +239,111 @@ See Also:
     ):
         """Initialize a task dependency specification.
 
-Creates a dependency that will be resolved automatically by the
-PipelineAgent before task execution. The resolved data will be
-injected into the task's configuration under the specified name.
+        Creates a dependency that will be resolved automatically by the
+        PipelineAgent before task execution. The resolved data will be
+        injected into the task's configuration under the specified name.
 
-Note:
-    * Dependencies are resolved in the order they are defined
-    * Transform functions should be deterministic and thread-safe
-    * Source task must complete successfully for REQUIRED dependencies
-    * Path resolution supports nested objects and array access
+        Note:
+            * Dependencies are resolved in the order they are defined
+            * Transform functions should be deterministic and thread-safe
+            * Source task must complete successfully for REQUIRED dependencies
+            * Path resolution supports nested objects and array access
 
-Args:
-    name: Key name where resolved data will be stored in the target
-        task's config dictionary. Should be descriptive and follow
-        naming conventions (snake_case recommended). This is how
-        the consuming task will access the dependency data.
-    source_path: Dot-notation path to the source data in TaskContext.
-        Format: "source_task_name.field_path". 
-        Examples:
-            * "search.results" - Access results field from search task
-            * "fetch.data.articles[].content" - Extract content from article array
-            * "config.api.endpoints.primary" - Access nested configuration
-            * "process.metadata.item_count" - Access metadata fields
+        Args:
+            name: Key name where resolved data will be stored in the target
+                task's config dictionary. Should be descriptive and follow
+                naming conventions (snake_case recommended). This is how
+                the consuming task will access the dependency data.
+            source_path: Dot-notation path to the source data in TaskContext.
+                Format: "source_task_name.field_path".
+                Examples:
+                    * "search.results" - Access results field from search task
+                    * "fetch.data.articles[].content" - Extract content from article array
+                    * "config.api.endpoints.primary" - Access nested configuration
+                    * "process.metadata.item_count" - Access metadata fields
 
-    dependency_type: How to handle missing dependencies:
+            dependency_type: How to handle missing dependencies:
 
-        * DependencyType.REQUIRED: Task execution fails if unavailable
-        * DependencyType.OPTIONAL: Uses default_value if unavailable
+                * DependencyType.REQUIRED: Task execution fails if unavailable
+                * DependencyType.OPTIONAL: Uses default_value if unavailable
 
-    default_value: Value to use when optional dependency is unavailable.
-        Only relevant for OPTIONAL dependencies. Can be any type that
-        makes sense for the consuming task. Common patterns:
+            default_value: Value to use when optional dependency is unavailable.
+                Only relevant for OPTIONAL dependencies. Can be any type that
+                makes sense for the consuming task. Common patterns:
 
-        * Empty list: []
-        * Empty dict: {}
-        * Default config: {"timeout": 30, "retries": 3}
-        * None: None (explicit null)
+                * Empty list: []
+                * Empty dict: {}
+                * Default config: {"timeout": 30, "retries": 3}
+                * None: None (explicit null)
 
-    transform_func: Optional function to preprocess resolved data before
-        injection. Function signature: (resolved_data: Any) -> Any.
-        Common uses:
+            transform_func: Optional function to preprocess resolved data before
+                injection. Function signature: (resolved_data: Any) -> Any.
+                Common uses:
 
-        * Extract specific fields: lambda x: [item['url'] for item in x]
-        * Filter data: lambda x: [item for item in x if item['valid']]
-        * Combine data: lambda x: ' '.join(x)
-        * Format data: lambda x: {"processed": x, "count": len(x)}
+                * Extract specific fields: lambda x: [item['url'] for item in x]
+                * Filter data: lambda x: [item for item in x if item['valid']]
+                * Combine data: lambda x: ' '.join(x)
+                * Format data: lambda x: {"processed": x, "count": len(x)}
 
-    override_existing: Whether to override existing values in task config.
+            override_existing: Whether to override existing values in task config.
 
-        * False (default): Only inject if key doesn't exist in config
-        * True: Always inject, overriding existing config values
+                * False (default): Only inject if key doesn't exist in config
+                * True: Always inject, overriding existing config values
 
-        Use with caution as it can override user-provided configuration.
+                Use with caution as it can override user-provided configuration.
 
-    description: Human-readable description of this dependency's purpose.
-        Helpful for documentation and debugging. Should explain what
-        data is being passed and how it will be used.
+            description: Human-readable description of this dependency's purpose.
+                Helpful for documentation and debugging. Should explain what
+                data is being passed and how it will be used.
 
-Example:
+        Example:
 
-Basic dependency:
+        Basic dependency:
 
-    .. code-block:: python
+            .. code-block:: python
 
-        # Pass search results to summarization task
+                # Pass search results to summarization task
 
-        TaskDependency(
-            name="search_results",
-            source_path="web_search.results",
-            dependency_type=DependencyType.REQUIRED
-        )
+                TaskDependency(
+                    name="search_results",
+                    source_path="web_search.results",
+                    dependency_type=DependencyType.REQUIRED
+                )
 
-Transformed dependency:
+        Transformed dependency:
 
-    .. code-block:: python
+            .. code-block:: python
 
-        TaskDependency(
-            name="article_urls",
-            source_path="search.results",
-            dependency_type=DependencyType.REQUIRED,
-            transform_func=lambda results: [r['url'] for r in results],
-            description="Extract URLs from search results for fetching"
-        )
+                TaskDependency(
+                    name="article_urls",
+                    source_path="search.results",
+                    dependency_type=DependencyType.REQUIRED,
+                    transform_func=lambda results: [r['url'] for r in results],
+                    description="Extract URLs from search results for fetching"
+                )
 
-Optional dependency with default:
+        Optional dependency with default:
 
-    .. code-block:: python
+            .. code-block:: python
 
-        TaskDependency(
-            name="processing_config",
-            source_path="config_loader.settings",
-            dependency_type=DependencyType.OPTIONAL,
-            default_value={"batch_size": 100, "parallel": True},
-            description="Processing configuration with sensible defaults"
-        )
+                TaskDependency(
+                    name="processing_config",
+                    source_path="config_loader.settings",
+                    dependency_type=DependencyType.OPTIONAL,
+                    default_value={"batch_size": 100, "parallel": True},
+                    description="Processing configuration with sensible defaults"
+                )
 
-Raises:
-    ValueError: If name is empty, source_path is empty, or source_path
-        doesn't contain a dot (invalid format).
+        Raises:
+            ValueError: If name is empty, source_path is empty, or source_path
+                doesn't contain a dot (invalid format).
 
-See Also:
-    * DependencyType: For dependency type behavior
-    * DependencyResolver: For resolution implementation details
-    * Built-in transform functions: extract_urls_from_results, etc.
+        See Also:
+            * DependencyType: For dependency type behavior
+            * DependencyResolver: For resolution implementation details
+            * Built-in transform functions: extract_urls_from_results, etc.
 
-"""
+        """
         if not name:
             raise ValueError("Dependency name cannot be empty")
 
