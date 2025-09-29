@@ -398,9 +398,13 @@ def fetch_url(
         Dictionary with fetch results (see URLFetcher.fetch for details)
 
     Example:
-        >>> result = fetch_url("https://example.com")
-        >>> print(result["content"])
-        >>> print(f"Status: {result['status_code']}")
+
+    .. code-block:: python
+
+        result = fetch_url("https://example.com")
+        print(result["content"])
+        print(f"Status: {result['status_code']}")
+
     """
     with URLFetcher(config) as fetcher:
         return fetcher.fetch(url, **kwargs)
