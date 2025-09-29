@@ -1,9 +1,9 @@
 aipype Documentation
 ====================
 
-🤖 Modular AI agent framework with declarative pipeline-based task orchestration.
+Modular AI agent framework with pipeline-based task orchestration for automation heavy AI workflows.
 
-aipype is a powerful Python framework for building AI workflows with automatic dependency resolution and parallel execution. It provides a clean, declarative interface for orchestrating tasks while handling complex dependency management behind the scenes.
+aipype is a powerful Python framework for building AI workflows with automatic dependency resolution and parallel execution. It provides a clean interface for orchestrating tasks while handling complex dependency management behind the scenes.
 
 Key Features
 ============
@@ -11,7 +11,7 @@ Key Features
 * **Pipeline System**: Declarative pipeline with automatic dependency resolution
 * **Task Context**: Shared data with path-based access ("search_results.data")
 * **Template Substitution**: ``${variable}`` syntax in task configurations
-* **Multiple Task Types**: LLM, Search, Transform, and Conditional tasks
+* **Multiple Built in Tasks**: LLM, Search, Transform, and Conditional tasks
 * **Parallel Execution**: Automatic optimization of task execution order
 * **Error Handling**: Graceful error propagation with TaskResult pattern
 
