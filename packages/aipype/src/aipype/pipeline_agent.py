@@ -1,4 +1,53 @@
-"""PipelineAgent - automatic task orchestration based on dependencies."""
+"""Pipeline-based AI agent framework with automatic task orchestration.
+
+This module provides PipelineAgent, the core component for building AI workflows with
+automatic dependency resolution and parallel execution. Tasks are organized into
+execution phases based on their dependencies, enabling optimal performance and
+data flow between tasks.
+
+Key Concepts:
+
+* **Dependency Resolution**: Tasks automatically receive data from dependent tasks
+* **Execution Phases**: Tasks are grouped for optimal parallel/sequential execution
+* **Task Context**: Shared data store for inter-task communication
+* **Error Handling**: TaskResult pattern for graceful error propagation
+
+**Quick Example**
+
+.. code-block:: python
+
+    class ArticleWriterAgent(PipelineAgent):
+        def setup_tasks(self):
+            return [
+                SearchTask("search", {"query": "AI trends", "max_results": 5}),
+                LLMTask("summarize", {
+                    "prompt": "Summarize: ${content}",
+                    "llm_provider": "openai",
+                    "llm_model": "gpt-4"
+                }, dependencies=[
+                    TaskDependency("content", "search.results", REQUIRED)
+                ])
+            ]
+
+    agent = ArticleWriterAgent("writer", {})
+    result = agent.run()
+    print(f"Status: {result.status}, Tasks: {result.completed_tasks}/{result.total_tasks}")
+
+**Execution Flow**
+
+#. **Setup**: Tasks defined with dependencies in setup_tasks()
+#. **Planning**: Dependency graph analyzed, phases created
+#. **Resolution**: Task configs updated with dependency data
+#. **Execution**: Phases run sequentially, tasks within phases run in parallel
+#. **Results**: AgentRunResult returned with execution status and metrics
+
+See Also:
+    * BaseTask: Base class for implementing custom tasks
+    * TaskDependency: Declarative dependency specification
+    * TaskContext: Shared data store for task communication
+    * AgentRunResult: Standardized execution result format
+
+"""
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any, Dict, List, Set, Optional
@@ -13,16 +62,39 @@ from .utils.common import setup_logger
 
 
 class TaskExecutionPlan:
-    """Execution plan that organizes tasks into phases based on dependencies."""
+    """Execution plan that organizes tasks into phases based on dependencies.
+
+This class analyzes task dependencies and creates an optimal execution plan where:
+
+    * Tasks with no dependencies run in the first phase
+    * Tasks whose dependencies are satisfied run in subsequent phases
+    * Tasks within the same phase can run in parallel
+    * Phases execute sequentially to maintain dependency ordering
+
+The plan automatically detects and rejects circular dependencies, ensuring
+all workflows can execute successfully.
+
+Attributes:
+    tasks: Original list of tasks to organize
+    phases: List of task lists, each representing an execution phase
+
+Example:
+    Given tasks: A, B (depends on A), C (depends on A), D (depends on B,C)
+
+    Execution plan:
+    * Phase 1: [A] (no dependencies)
+    * Phase 2: [B, C] (depend only on A, can run in parallel)
+    * Phase 3: [D] (depends on B and C)
+    """
 
     def __init__(self, tasks: List[BaseTask]):
         """Create execution plan from list of tasks.
 
-        Args:
-            tasks: List of tasks to organize into execution phases
+Args:
+    tasks: List of tasks to organize into execution phases
 
-        Raises:
-            ValueError: If circular dependencies detected or dependencies cannot be satisfied
+Raises:
+    ValueError: If circular dependencies detected or dependencies cannot be satisfied
         """
         self.tasks = tasks
         self.logger = setup_logger("task_execution_plan")
@@ -51,11 +123,11 @@ class TaskExecutionPlan:
     ) -> Dict[str, Set[str]]:
         """Build dependency graph mapping task names to their dependencies.
 
-        Args:
-            task_map: Mapping of task names to task objects
+Args:
+    task_map: Mapping of task names to task objects
 
-        Returns:
-            Dictionary mapping task names to sets of dependency task names
+Returns:
+    Dictionary mapping task names to sets of dependency task names
         """
         dependency_graph: Dict[str, Set[str]] = {}
 
@@ -82,11 +154,11 @@ class TaskExecutionPlan:
     ) -> None:
         """Check for circular dependencies in the graph.
 
-        Args:
-            dependency_graph: Task dependency graph
+Args:
+    dependency_graph: Task dependency graph
 
-        Raises:
-            ValueError: If circular dependency detected
+Raises:
+    ValueError: If circular dependency detected
         """
         # Use DFS to detect cycles
         visited: Set[str] = set()
@@ -120,9 +192,9 @@ class TaskExecutionPlan:
     ) -> None:
         """Organize tasks into execution phases for optimal parallelism.
 
-        Args:
-            dependency_graph: Task dependency graph
-            task_map: Mapping of task names to task objects
+Args:
+    dependency_graph: Task dependency graph
+    task_map: Mapping of task names to task objects
         """
         remaining_tasks = set(dependency_graph.keys())
 
@@ -150,19 +222,19 @@ class TaskExecutionPlan:
     def total_phases(self) -> int:
         """Get total number of execution phases.
 
-        Returns:
-            Number of phases
+Returns:
+    Number of phases
         """
         return len(self.phases)
 
     def get_phase(self, phase_index: int) -> List[BaseTask]:
         """Get tasks in a specific phase.
 
-        Args:
-            phase_index: Index of the phase
+Args:
+    phase_index: Index of the phase
 
-        Returns:
-            List of tasks in the phase
+Returns:
+    List of tasks in the phase
         """
         if 0 <= phase_index < len(self.phases):
             return self.phases[phase_index]
@@ -178,15 +250,166 @@ class TaskExecutionPlan:
 
 
 class PipelineAgent:
-    """Agent that automatically orchestrates task execution based on dependencies."""
+    """Main agent class for building AI workflows with automatic task orchestration.
+
+PipelineAgent is the primary interface for creating AI automation workflows.
+It automatically handles task dependency resolution, parallel execution,
+error handling, and result collection. Users inherit from this class and
+implement setup_tasks() to define their workflow.
+
+Key Features
+    * **Automatic Dependency Resolution**: Tasks receive data from previous tasks
+    * **Parallel Execution**: Independent tasks run simultaneously for performance
+    * **Error Handling**: Graceful handling of task failures with detailed reporting
+    * **Context Management**: Shared data store for inter-task communication
+    * **Result Tracking**: Comprehensive execution metrics and status reporting
+
+Configuration Options:
+    * enable_parallel (bool): Enable parallel task execution (default: True)
+    * max_parallel_tasks (int): Maximum concurrent tasks (default: 5)
+    * stop_on_failure (bool): Stop pipeline on first failure (default: True)
+
+Lifecycle:
+    1. **Initialization**: Agent created with name and config
+    2. **Task Setup**: setup_tasks() called to define workflow
+    3. **Execution**: run() method orchestrates task execution
+    4. **Results**: AgentRunResult returned with status and metrics
+
+**Example**
+
+**Basic agent implementation:**
+
+.. code-block:: python
+
+    class DataProcessorAgent(PipelineAgent):
+        def setup_tasks(self):
+            return [
+                SearchTask("gather_data", {
+                    "query": self.config.get("search_query", ""),
+                    "max_results": 10
+                }),
+                TransformTask("process_data", {
+                    "transform_function": process_search_results,
+                    "input_field": "results"
+                }, dependencies=[
+                    TaskDependency("results", "gather_data.results", REQUIRED)
+                ]),
+                FileSaveTask("save_results", {
+                    "file_path": "/tmp/results.json"
+                }, dependencies=[
+                    TaskDependency("data", "process_data.result", REQUIRED)
+                ])
+            ]
+
+    # Usage
+    agent = DataProcessorAgent("processor", {
+        "search_query": "machine learning trends",
+        "enable_parallel": True
+    })
+    result = agent.run()
+
+    if result.is_success():
+        print(f"Processed {result.completed_tasks} tasks successfully")
+        # Access individual task results
+        search_result = agent.context.get_result("gather_data")
+        processed_data = agent.context.get_result("process_data")
+    else:
+        print(f"Pipeline failed: {result.error_message}")
+
+**Advanced configuration:**
+
+.. code-block:: python
+
+    agent = DataProcessorAgent("processor", {
+        "search_query": "AI research",
+        "enable_parallel": False,  # Sequential execution
+        "stop_on_failure": False,  # Continue despite failures
+        "max_parallel_tasks": 10   # Higher concurrency
+    })
+
+**Return Values**
+
+run() returns AgentRunResult with:
+
+* **status**: SUCCESS, PARTIAL, ERROR, or RUNNING
+* **completed_tasks/failed_tasks**: Task completion counts
+* **total_phases**: Number of execution phases
+* **execution_time**: Total runtime in seconds
+* **metadata**: Additional execution information
+
+**Error Handling**
+
+* Individual task failures are captured and reported
+* Pipeline can continue or stop based on stop_on_failure setting
+* Detailed error information available in execution context
+* Partial success supported for workflows with optional components
+
+**Thread Safety**
+
+* TaskContext is thread-safe for concurrent task execution
+* Agent instance should not be shared between threads
+* Each agent execution creates isolated context
+
+**Performance**
+
+* Tasks in same phase execute in parallel (when enabled)
+* Dependency resolution minimizes execution phases
+* ThreadPoolExecutor manages concurrent task execution
+* Configurable concurrency limits prevent resource exhaustion
+
+"""
 
     def __init__(self, name: str, config: Optional[Dict[str, Any]] = None):
-        """Initialize pipeline agent.
+        """Initialize pipeline agent with name and configuration.
 
-        Args:
-            name: Agent name
-            config: Agent configuration
-        """
+Creates a new pipeline agent instance with automatic task setup.
+The agent will call setup_tasks() during initialization to configure
+the workflow. TaskContext and DependencyResolver are created automatically.
+
+Attributes Created:
+
+    * name: Agent identifier
+    * config: Configuration dictionary
+    * tasks: List of tasks (populated by setup_tasks())
+    * context: TaskContext for inter-task communication
+    * dependency_resolver: Handles dependency resolution
+    * execution_plan: Created during run() execution
+
+Args:
+    name: Unique identifier for this agent instance. Used in logging
+        and result tracking. Should be descriptive of the agent's purpose.
+    config: Configuration dictionary with agent settings:
+
+        * enable_parallel (bool): Enable parallel task execution (default: True)
+        * max_parallel_tasks (int): Maximum concurrent tasks (default: 5)
+        * stop_on_failure (bool): Stop pipeline on first failure (default: True)
+
+    Additional config keys are passed to tasks via self.config.
+
+Example:
+
+.. code-block:: python
+
+    agent = MyAgent("data_processor", {
+        "enable_parallel": True,
+        "max_parallel_tasks": 3,
+        "input_file": "data.csv"
+    })
+    print(f"Agent {agent.name} has {len(agent.tasks)} tasks")
+
+Note:
+    The agent automatically calls setup_tasks() during initialization.
+    If setup_tasks() raises an exception, the agent will log a warning
+    but continue with an empty task list.
+
+See Also:
+
+    * BaseTask: Base class for implementing custom tasks
+    * TaskDependency: Declarative dependency specification
+    * TaskContext: Shared data store for inter-task communication
+    * AgentRunResult: Standardized execution result format
+
+"""
         self.name = name
         self.config = config or {}
         self.tasks: List[BaseTask] = []
@@ -214,10 +437,91 @@ class PipelineAgent:
             self.logger.debug(f"Added task: {task.name}")
 
     def setup_tasks(self) -> List[BaseTask]:
-        """Set up tasks for this agent. Must be implemented by subclasses.
+        """Define the workflow tasks for this agent. Must be implemented by subclasses.
+
+        This is the main method where users define their AI workflow by creating
+        and configuring tasks with their dependencies. Tasks are automatically
+        organized into execution phases based on their dependency relationships.
+
+        Task Naming:
+            * Use descriptive names that indicate the task's purpose
+            * Names must be unique within the agent
+            * Use snake_case for consistency
+            * **Good**: "fetch_articles", "analyze_sentiment", "save_results"
+            * **Avoid**: "task1", "t", "process"
+
+        Dependency Design:
+            * Required dependencies must be satisfied for task to run
+            * Optional dependencies use default values if source unavailable
+            * Circular dependencies will cause pipeline execution to fail
+            * Use transform_func in dependencies for data preprocessing
+
+        Note:
+            This method is called automatically during agent initialization.
+            Tasks should not be added to self.tasks directly - return them
+            from this method instead.
+
+        See Also:
+            * TaskDependency: For creating task dependencies
+            * BaseTask subclasses: LLMTask, SearchTask, ConditionalTask, etc.
+            * Task-specific documentation for configuration options
 
         Returns:
-            List of configured tasks
+            List[BaseTask]:
+                List of configured BaseTask instances that define the workflow.
+
+        Example:
+            Basic search and summarize workflow:
+
+                .. code-block:: python
+
+                    def setup_tasks(self):
+                        return [
+                            SearchTask("search", {
+                                "query": self.config.get("topic", ""),
+                                "max_results": 5
+                            }),
+                            LLMTask("summarize", {
+                                "prompt": "Summarize these articles: ${articles}",
+                                "llm_provider": "openai",
+                                "llm_model": "gpt-4"
+                            }, dependencies=[
+                                TaskDependency("articles", "search.results", REQUIRED)
+                            ])
+                        ]
+
+            Complex workflow with conditional logic:
+
+                .. code-block:: python
+
+                    def setup_tasks(self):
+                        return [
+                            SearchTask("search", {"query": "AI news"}),
+                            TransformTask("filter", {
+                                "transform_function": filter_recent_articles,
+                                "input_field": "results"
+                            }, dependencies=[
+                                TaskDependency("results", "search.results", REQUIRED)
+                            ]),
+                            ConditionalTask("quality_check", {
+                                "condition_function": lambda articles: len(articles) >= 3,
+                                "condition_inputs": ["filtered_articles"],
+                                "action_function": log_action("Quality check passed"),
+                                "else_function": log_action("Insufficient articles")
+                            }, dependencies=[
+                                TaskDependency("filtered_articles", "filter.result", REQUIRED)
+                            ]),
+                            LLMTask("summarize", {
+                                "prompt": "Create summary from: ${content}",
+                                "llm_provider": "openai"
+                            }, dependencies=[
+                                TaskDependency("content", "filter.result", REQUIRED)
+                            ])
+                        ]
+
+        Raises:
+            NotImplementedError: Must be implemented by subclasses
+
         """
         raise NotImplementedError("Subclasses must implement setup_tasks()")
 
@@ -269,10 +573,118 @@ class PipelineAgent:
             self.logger.warning(f"Auto-setup failed: {e}")
 
     def run(self) -> AgentRunResult:
-        """Run all tasks using automatic dependency-based orchestration.
+        """Execute the complete workflow with automatic task orchestration.
+
+        This is the main execution method that runs the entire pipeline:
+
+        1. Builds execution plan from task dependencies
+        2. Resolves dependencies and updates task configurations
+        3. Executes tasks in phases (parallel within phases, sequential between phases)
+        4. Collects results and handles errors
+        5. Returns comprehensive execution status
+
+        The method handles all aspects of task execution including dependency
+        resolution, parallel execution, error propagation, and result collection.
+        Individual task failures are captured and the pipeline can continue
+        based on the stop_on_failure configuration.
+
+        The method returns `AgentRunResult` containing:
+
+            - status: 
+                - SUCCESS (all tasks completed), 
+                - PARTIAL (some failed),
+                - ERROR (all failed), 
+                - RUNNING (already executing)
+            - completed_tasks: Number of successfully completed tasks
+            - failed_tasks: Number of tasks that failed
+            - total_phases: Number of execution phases used
+            - execution_time: Total runtime in seconds
+            - metadata: Additional execution information
+
+        **Exceptions**
+
+        No exceptions are raised directly. All operational errors are
+        captured in the returned AgentRunResult. Only programming errors
+        (like missing setup_tasks implementation) will raise exceptions.
+            
+        **Example**
+
+        **Basic execution and result checking:**
+
+        .. code-block:: python
+
+            agent = MyAgent("processor", config)
+            result = agent.run()
+
+            if result.is_success():
+                print(f"All {result.completed_tasks} tasks completed successfully")
+
+                # Access individual task results
+                search_data = agent.context.get_result("search_task")
+                processed_data = agent.context.get_result("process_task")
+
+            elif result.is_partial():
+                print(f"Partial success: {result.completed_tasks}/{result.total_tasks}")
+                print(f"Failed tasks: {result.failed_tasks}")
+
+            else:  # result.is_error()
+                print(f"Pipeline failed: {result.error_message}")
+
+        **Performance monitoring:**
+
+        .. code-block:: python
+
+            result = agent.run()
+            print(f"Execution time: {result.execution_time:.2f}s")
+            print(f"Phases used: {result.total_phases}")
+
+            # Check if parallel execution was effective
+            if result.total_phases < len(agent.tasks):
+                print("Parallel execution optimized the pipeline")
+
+        **Execution Phases**
+
+        Tasks are automatically organized into phases based on dependencies:
+
+        - **Phase 1**: Tasks with no dependencies
+        - **Phase 2**: Tasks depending only on Phase 1 tasks
+        - **Phase N**: Tasks depending on previous phases only
+
+        Within each phase, tasks can execute in parallel (if enabled).
+        Between phases, execution is sequential to maintain dependency order.
+
+        **Error Handling**
+
+        * Individual task errors are captured in TaskResult objects
+        * Pipeline can continue or stop based on stop_on_failure config
+        * Partial success is supported when some tasks succeed
+        * All errors are logged with detailed context information
+        * Failed task dependencies propagate to dependent tasks
+
+        **Thread Safety**
+
+        This method is not thread-safe. Each agent instance should only
+        execute one pipeline at a time. Concurrent task execution within
+        the pipeline is handled internally with ThreadPoolExecutor.
+
+        **Performance**
+
+        * Parallel execution significantly improves performance for independent tasks
+        * Dependency resolution optimizes execution order
+        * Thread pool size controlled by max_parallel_tasks config
+        * Memory usage scales with number of concurrent tasks
+
+        Note:
+            If the agent is already running, this method returns immediately
+            with a RUNNING status to prevent concurrent execution conflicts.
+
+        See Also:
+            - AgentRunResult: For detailed result format and status checking
+            - TaskContext: Access via agent.context for individual task results
+            - TaskExecutionPlan: For understanding execution phase organization
 
         Returns:
-            AgentRunResult containing execution status and results
+            AgentRunResult
         """
         if self._is_running:
             self.logger.warning(f"PipelineAgent '{self.name}' is already running")
@@ -745,7 +1157,7 @@ class PipelineAgent:
                 # Check for direct nested data in known keys
                 elif "result" in result and isinstance(result["result"], dict):
                     # Task result data structures are dynamic based on task implementations
-                    data: dict[str, Any] = result["result"]  # pyright: ignore[reportUnknownVariableType]
+                    data = result["result"]  # pyright: ignore[reportUnknownVariableType]
 
                 # Show content preview if available
                 if "content" in data:

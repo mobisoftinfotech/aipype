@@ -118,13 +118,12 @@ def _detect_encoding(
 class URLFetcher:
     """Utility class for fetching web content with Chrome-like behavior."""
 
-    # Chrome-like user agent string (Chrome 121 on Windows 10)
     DEFAULT_USER_AGENT = (
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
         "(KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
     )
+    """Chrome-like user agent string (Chrome 121 on Windows 10)."""
 
-    # Default headers that mimic Chrome browser
     DEFAULT_HEADERS = {
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
         "Accept-Language": "en-US,en;q=0.9",
@@ -141,17 +140,20 @@ class URLFetcher:
         "Sec-Fetch-User": "?1",
         "Upgrade-Insecure-Requests": "1",
     }
+    """Default headers that mimic Chrome browser."""
 
     def __init__(self, config: Optional[Dict[str, Any]] = None):
         """Initialize URL fetcher with optional configuration.
 
         Args:
             config: Optional configuration dictionary with options:
+
                 - timeout: Request timeout in seconds (default: 30)
                 - user_agent: Custom user agent string
                 - headers: Additional headers to include
                 - follow_redirects: Whether to follow redirects (default: True)
                 - max_redirects: Maximum number of redirects (default: 10)
+
         """
         self.config = config or {}
         self.timeout = self.config.get("timeout", 30)
@@ -396,9 +398,13 @@ def fetch_url(
         Dictionary with fetch results (see URLFetcher.fetch for details)
 
     Example:
-        >>> result = fetch_url("https://example.com")
-        >>> print(result["content"])
-        >>> print(f"Status: {result['status_code']}")
+
+    .. code-block:: python
+
+        result = fetch_url("https://example.com")
+        print(result["content"])
+        print(f"Status: {result['status_code']}")
+
     """
     with URLFetcher(config) as fetcher:
         return fetcher.fetch(url, **kwargs)

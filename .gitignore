@@ -61,7 +61,6 @@ google_*.json
 *_credentials.json
 *_token.json
 
-docs/
 .cursor/
 .claude/
 .vscode/
@@ -69,3 +68,8 @@ CLAUDE.md
 
 # Publishing script (private)
 scripts/publish_to_pypi.sh
+
+# Sphinx documentation
+docs/_build/
+docs/_autosummary/
+docs/.doctrees/

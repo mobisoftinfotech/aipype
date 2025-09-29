@@ -25,6 +25,7 @@ class ReadGoogleSheetTask(BaseTask):
         Args:
             name: Task name
             config: Configuration dictionary containing:
+
                 - spreadsheet_id: Google Spreadsheet ID (required)
                 - range: Range in A1 notation (e.g., 'Sheet1!A1:C10') (optional)
                 - sheet_name: Name of sheet to read (alternative to range) (optional)
@@ -37,6 +38,7 @@ class ReadGoogleSheetTask(BaseTask):
                 - credentials_file: Path to OAuth2 credentials file (optional)
                 - token_file: Path to OAuth2 token file (optional)
                 - timeout: Request timeout in seconds (default: 30)
+
             dependencies: List of task dependencies
         """
         super().__init__(name, config)
