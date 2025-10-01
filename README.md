@@ -1,5 +1,11 @@
 # aipype
 
+<div align="center">
+  <img src="docs/aipype-logo.svg" alt="aipype logo" width="200"/>
+
+  [**Website**](https://mobisoftinfotech.com/tools/aipype/) | [**API Docs**](https://mobisoftinfotech.com/tools/aipype/docs/)
+</div>
+
 AI agent framework with declarative pipeline-based task orchestration.
 
 `aipype` is mainly created for automation-heavy LLM-powered workflows. The aim is to create your agents as simple python scripts which you can write with the help of LLMs. 
