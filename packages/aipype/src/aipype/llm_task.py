@@ -45,6 +45,31 @@ Enable function calling with automatic tool management:
         "llm_model": "gpt-4"
     })
 
+**Structured Outputs**
+
+Get typed, structured responses using Pydantic models or JSON schemas:
+
+.. code-block:: python
+
+    from pydantic import BaseModel
+
+    class Article(BaseModel):
+        title: str
+        summary: str
+        key_points: list[str]
+
+    task = LLMTask("extract", {
+        "prompt": "Extract article information from: ${text}",
+        "response_format": Article,  # Pass Pydantic model
+        "llm_provider": "openai",
+        "llm_model": "gpt-4o-mini"
+    })
+
+    # Access parsed structured data
+    result = task.run()
+    if result.is_success():
+        parsed_data = result.data["parsed_object"]  # Dict matching Article schema
+
 **Supported Providers**
 
 * **OpenAI**: gpt-4, gpt-3.5-turbo, etc.
@@ -72,6 +97,13 @@ Enable function calling with automatic tool management:
 * parallel_tool_calls: Enable parallel tool execution
 * max_tool_execution_time: Tool timeout in seconds
 
+**Structured outputs:**
+
+* response_format: Pydantic BaseModel class or JSON schema dict
+
+  - Pydantic model: Pass model class directly (requires pydantic>=2.0)
+  - JSON schema: Dict with {"type": "json_schema", "json_schema": {...}}
+
 **Context and role:**
 
 * context: System/context message (supports templates)
@@ -82,6 +114,7 @@ Enable function calling with automatic tool management:
 LLMTask returns structured data including:
 
 * **content**: Generated text response
+* **parsed_object**: Parsed JSON object (when response_format is used)
 * **usage**: Token usage statistics
 * **tool_calls**: List of executed tool calls (if any)
 * **model**: Model used for generation
@@ -129,7 +162,7 @@ LLMTask returns structured data including:
         "prompt": "Help solve this math problem: ${problem}",
         "tools": [calculate],
         "llm_provider": "openai",
-        "llm_model": "gpt-4",
+        "llm_model": "gpt-4o-mini",
         "tool_choice": "auto"
     })
 
@@ -157,11 +190,13 @@ import re
 import os
 import json
 from datetime import datetime
-from typing import Any, Callable, Dict, List, Optional, TypedDict
+from typing import Any, Callable, Dict, List, Optional, Type, TypedDict
 
 from typing import override
 from dotenv import load_dotenv
 import litellm
+from pydantic import BaseModel
+
 from .base_task import BaseTask
 from .task_result import TaskResult
 from .task_dependencies import TaskDependency
@@ -508,6 +543,7 @@ class LLMTask(BaseTask):
                 "tool_choice",
                 "parallel_tool_calls",
                 "max_tool_execution_time",
+                "response_format",
             ],
             "defaults": {
                 "temperature": self.DEFAULT_TEMPERATURE,
@@ -525,7 +561,7 @@ class LLMTask(BaseTask):
                 "max_tokens": int,
                 "timeout": (int, float),
                 "context": str,
-                # tools type validation handled by custom validator
+                # tools and response_format type validation handled by custom validators
                 "tool_choice": str,
                 "parallel_tool_calls": bool,
                 "max_tool_execution_time": (int, float),
@@ -542,6 +578,7 @@ class LLMTask(BaseTask):
                 "llm_model": lambda x: x.strip() != "",  # pyright: ignore[reportUnknownLambdaType,reportUnknownMemberType]
                 "tools": self._validate_tools,
                 "tool_choice": lambda x: x in ["auto", "none"] or isinstance(x, str),  # pyright: ignore[reportUnknownLambdaType]
+                "response_format": self._validate_response_format,
             },
         }
         self.context_instance: Optional[TaskContext] = None
@@ -555,6 +592,13 @@ class LLMTask(BaseTask):
         self.tool_executor: Optional[ToolExecutor] = None
         self.supports_tools: bool = False
         self.tool_setup_error: Optional[str] = None
+
+        # Structured response instance variables
+        self.response_format_type: Optional[str] = (
+            None  # "pydantic", "json_schema", or None
+        )
+        self.response_format_config: Optional[Dict[str, Any]] = None
+        self.supports_response_format: bool = False
 
         # Apply tool-related defaults when tools are provided
         if "tools" in self.config and self.config["tools"]:
@@ -580,6 +624,15 @@ class LLMTask(BaseTask):
                 # Store the error for later - don't raise exception during init
                 self.tool_setup_error = f"LLMTask tool setup operation failed: {str(e)}"
                 # Leave supports_tools as False so run() can handle the error
+
+        # Setup response format if provided
+        if "response_format" in self.config and self.config["response_format"]:
+            try:
+                self._setup_response_format()
+            except Exception as e:
+                # Store error for later handling in run()
+                self.logger.warning(f"Response format setup failed: {str(e)}")
+                # Leave supports_response_format as False
 
         # Set up litellm configuration
         if self.config.get("timeout"):
@@ -666,6 +719,44 @@ class LLMTask(BaseTask):
 
         return True
 
+    def _validate_response_format(self, value: Any) -> bool:
+        """Validate response_format configuration.
+
+        Args:
+            value: Response format value to validate (Pydantic model or dict)
+
+        Returns:
+            True if valid response_format
+        """
+        # Runtime validation needed for dynamic config data
+        # Check if it's a Pydantic BaseModel class
+        try:
+            if isinstance(value, type) and issubclass(value, BaseModel):
+                return True
+        except TypeError:
+            # Not a class, continue to dict check
+            pass
+
+        # Check if it's a dict with the correct structure
+        if isinstance(value, dict):  # pyright: ignore[reportUnnecessaryIsInstance]
+            # Must have "type" field
+            if "type" not in value:
+                return False
+
+            # If type is "json_schema", must have "json_schema" with "name" and "schema"
+            if value["type"] == "json_schema":
+                if "json_schema" not in value:
+                    return False
+                json_schema = value["json_schema"]
+                if not isinstance(json_schema, dict):  # pyright: ignore[reportUnnecessaryIsInstance]
+                    return False
+                if "name" not in json_schema or "schema" not in json_schema:
+                    return False
+
+            return True
+
+        return False
+
     def _setup_tool_support(self) -> None:
         """Initialize tool registry and executor from function list."""
         tool_functions = self.config["tools"]
@@ -688,6 +779,140 @@ class LLMTask(BaseTask):
         self.logger.info(
             f"Initialized {len(tool_functions)} tools for task '{self.name}'"
         )
+
+    def _add_additional_properties(self, schema: Dict[str, Any]) -> Dict[str, Any]:
+        """Recursively add additionalProperties: false to all objects in schema.
+
+        OpenAI's strict mode requires additionalProperties to be explicitly set to false
+        for all object types in the schema.
+
+        Args:
+            schema: JSON schema dict
+
+        Returns:
+            Modified schema with additionalProperties set
+        """
+        if isinstance(schema, dict):
+            # If this is an object type, add additionalProperties: false
+            if schema.get("type") == "object":
+                schema["additionalProperties"] = False
+
+            # Recursively process nested schemas
+            for key, value in schema.items():
+                if isinstance(value, dict):
+                    schema[key] = self._add_additional_properties(value)
+                elif isinstance(value, list):
+                    schema[key] = [
+                        self._add_additional_properties(item)
+                        if isinstance(item, dict)
+                        else item
+                        for item in value
+                    ]
+
+        return schema
+
+    def _convert_pydantic_to_schema(
+        self,
+        model: Type[Any],  # Type is BaseModel but we use Any for type safety
+    ) -> Dict[str, Any]:
+        """Convert Pydantic model to litellm JSON schema format.
+
+        Args:
+            model: Pydantic BaseModel class
+
+        Returns:
+            Dict in litellm response_format structure
+        """
+        # Generate base schema from Pydantic model
+        base_schema = model.model_json_schema()  # type: ignore
+
+        # Add additionalProperties: false recursively (required for OpenAI strict mode)
+        schema_with_additional_props = self._add_additional_properties(base_schema)
+
+        return {
+            "type": "json_schema",
+            "json_schema": {
+                "name": model.__name__,
+                "schema": schema_with_additional_props,
+                "strict": True,
+            },
+        }
+
+    def _check_model_supports_response_schema(self) -> bool:
+        """Check if the current model/provider supports response_format.
+
+        Returns:
+            True if model supports structured output
+        """
+        try:
+            provider = self.config["llm_provider"].lower()
+            model = self.config["llm_model"]
+
+            # Use litellm's built-in support checking
+            return litellm.utils.supports_response_schema(  # type: ignore
+                model=model,
+                custom_llm_provider=provider if provider != "openai" else None,
+            )
+        except Exception as e:
+            self.logger.debug(f"Could not determine response_schema support: {str(e)}")
+            # Fallback to False - don't use response_format if unsure
+            return False
+
+    def _setup_response_format(self) -> None:
+        """Setup structured response format from configuration."""
+        response_format = self.config["response_format"]
+
+        # Check if it's a Pydantic model class
+        try:
+            if isinstance(response_format, type) and issubclass(
+                response_format, BaseModel
+            ):
+                # Convert Pydantic model to litellm format
+                self.response_format_config = self._convert_pydantic_to_schema(
+                    response_format
+                )
+                self.response_format_type = "pydantic"
+                self.supports_response_format = True
+                self.logger.info(
+                    f"Configured Pydantic response format: {response_format.__name__}"
+                )
+                return
+        except TypeError:
+            # Not a Pydantic model, try dict format
+            pass
+
+        # Check if it's already in dict format
+        if isinstance(response_format, dict):
+            # Add additionalProperties: false to the schema (required for OpenAI strict mode)
+            if (
+                "json_schema" in response_format
+                and "schema" in response_format["json_schema"]
+            ):
+                schema = response_format["json_schema"]["schema"]
+                # Process schema to add additionalProperties: false
+                processed_schema = self._add_additional_properties(schema)
+                # Create a new response_format dict with the processed schema
+                self.response_format_config = {
+                    "type": response_format.get("type", "json_schema"),
+                    "json_schema": {
+                        "name": response_format["json_schema"].get("name", "Unknown"),
+                        "schema": processed_schema,
+                        "strict": response_format["json_schema"].get("strict", True),
+                    },
+                }
+            else:
+                # If structure is unexpected, use as-is
+                self.response_format_config = response_format
+
+            self.response_format_type = "json_schema"
+            self.supports_response_format = True
+            schema_name = response_format.get("json_schema", {}).get("name", "unknown")
+            self.logger.info(f"Configured JSON schema response format: {schema_name}")
+        else:
+            raise ValueError(
+                f"Invalid response_format type: {type(response_format)}. "
+                f"Must be a Pydantic BaseModel class or dict with json_schema structure."
+            )
 
     def _prepare_messages_with_tool_context(self) -> List[Dict[str, Any]]:
         """Enhanced message preparation with automatic tool context."""
@@ -979,6 +1204,20 @@ class LLMTask(BaseTask):
 
             self.logger.debug(f"Added {len(call_params['tools'])} tools to LLM call")
 
+        # Add structured response format if configured
+        if self.supports_response_format and self.response_format_config:
+            # Check if model supports response_schema
+            if self._check_model_supports_response_schema():
+                call_params["response_format"] = self.response_format_config
+                self.logger.debug(
+                    f"Added structured response format: {self.response_format_type}"
+                )
+            else:
+                self.logger.warning(
+                    f"Model {self.config['llm_model']} does not support response_format. "
+                    f"Structured output may not work as expected."
+                )
+
         self.logger.info(f"Making LLM call to {model_name}")
         self.logger.debug(f"Messages: {len(messages)} messages")
 
@@ -1136,6 +1375,18 @@ class LLMTask(BaseTask):
             tool_calls = self._extract_tool_calls(response)
             if tool_calls:
                 result["tool_calls"] = tool_calls
+
+            # Parse structured output if response_format was used
+            if self.supports_response_format and content:
+                try:
+                    parsed_object = json.loads(content)
+                    result["parsed_object"] = parsed_object
+                    self.logger.debug("Successfully parsed structured response")
+                except json.JSONDecodeError as e:
+                    self.logger.warning(
+                        f"Failed to parse structured response as JSON: {str(e)}"
+                    )
+                    # Don't fail the task, just skip parsed_object
 
             self.logger.info(f"LLM response processed: {len(content)} characters")
             if "usage" in result:
