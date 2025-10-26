@@ -273,6 +273,23 @@ Integration tests for Google APIs (Gmail, Sheets) need OAuth2 authentication.
 #### First-Time Authentication
 Tests will open browser for OAuth2 consent and save tokens automatically.
 
+## Publishing Releases
+
+### For Maintainers
+
+Publish to production PyPI:
+
+```bash
+export UV_PUBLISH_TOKEN=your-token-here
+./scripts/publish_to_pypi.sh --prod
+```
+
+Verify published packages:
+
+```bash
+./scripts/create_test_project.sh /tmp/verify-release
+```
+
 ## Creators
 
 `aipype` is created by [Mobisoft Infotech](https://mobisoftinfotech.com/).
