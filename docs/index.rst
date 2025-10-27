@@ -1,6 +1,9 @@
 aipype Documentation
 ====================
 
+.. note::
+   **Version:** |release|
+
 Modular AI agent framework with pipeline-based task orchestration for automation heavy AI workflows.
 
 aipype is a powerful Python framework for building AI workflows with automatic dependency resolution and parallel execution. It provides a clean interface for orchestrating tasks while handling complex dependency management behind the scenes.
