@@ -2,6 +2,7 @@
 
 import os
 import sys
+import tomllib
 from pathlib import Path
 
 # Add source directories to Python path for autodoc
@@ -10,11 +11,23 @@ sys.path.insert(0, str(project_root / "packages" / "aipype" / "src"))
 sys.path.insert(0, str(project_root / "packages" / "aipype-extras" / "src"))
 sys.path.insert(0, str(project_root / "packages" / "aipype-g" / "src"))
 
+# Extract version from aipype package pyproject.toml
+def get_version() -> str:
+    """Read version from aipype package pyproject.toml."""
+    pyproject_path = project_root / "packages" / "aipype" / "pyproject.toml"
+    try:
+        with open(pyproject_path, "rb") as f:
+            data = tomllib.load(f)
+            return data.get("project", {}).get("version", "unknown")
+    except (FileNotFoundError, tomllib.TOMLDecodeError, KeyError):
+        return "unknown"
+
 # Project information
 project = "aipype"
-copyright = "2024, aipype contributors"
+copyright = "2025, aipype contributors"
 author = "aipype contributors"
-release = "0.1.0"
+release = get_version()
+version = release  # Short version (shown in sidebar)
 
 # General configuration
 extensions = [
