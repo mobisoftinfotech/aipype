@@ -1,41 +1,49 @@
 #!/bin/bash
 set -e
 
-# Build single-file text documentation (llms.txt) using Sphinx for all packages
+# Build single-file text documentation (llms.txt) using Sphinx for specific packages
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 DOCS_DIR="$PROJECT_ROOT/docs"
 BUILD_DIR="$DOCS_DIR/_build/text"
+OUTPUT_DIR="$DOCS_DIR/_build"
 
 # Function to show help
 show_help() {
     cat << EOF
-Build single-file text documentation (llms.txt) for aipype packages using Sphinx
+Build single-file text documentation (llms.txt) for specific aipype packages using Sphinx
 
 Usage: $0 [OPTIONS]
 
 Options:
-    --output FILE       Output file path (default: llms.txt in project root)
+    --packages LIST     Comma-separated list of packages (default: aipype,aipype-g)
+                        Available: aipype, aipype-extras, aipype-g
     --clean             Remove existing text build before building
     --help              Show this help message
 
+Output:
+    Files are created in docs/_build/ directory:
+    - llms-aipype.txt
+    - llms-aipype-g.txt
+
 Examples:
-    $0                              # Build llms.txt in project root
-    $0 --output docs/llms.txt       # Build to custom location
-    $0 --clean                      # Clean build first
+    $0                                    # Build llms files in docs/_build/
+    $0 --packages aipype                  # Build only llms-aipype.txt
+    $0 --packages aipype,aipype-extras    # Build specified packages
+    $0 --clean                            # Clean build first
 EOF
 }
 
 # Default values
-OUTPUT_FILE="$PROJECT_ROOT/llms.txt"
+PACKAGES="aipype,aipype-g"
 CLEAN=false
 
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
     case $1 in
-        --output)
-            OUTPUT_FILE="$2"
+        --packages)
+            PACKAGES="$2"
             shift 2
             ;;
         --clean)
@@ -76,17 +84,37 @@ else
     exit 1
 fi
 
-# Concatenate all text files into single llms.txt
-echo "📝 Combining documentation into single file..."
+# Convert packages string to array
+IFS=',' read -ra PACKAGE_ARRAY <<< "$PACKAGES"
 
-# Start with a header
-cat > "$OUTPUT_FILE" << 'EOF'
+echo "📝 Generating separate llms.txt files for packages: ${PACKAGES}..."
+
+# Process each package
+for package in "${PACKAGE_ARRAY[@]}"; do
+    # Trim whitespace
+    package=$(echo "$package" | xargs)
+
+    # Convert package name: aipype-g -> aipype_g for file lookup
+    package_file="${package//-/_}"
+    api_file="$BUILD_DIR/api/${package_file}.txt"
+    output_file="$OUTPUT_DIR/llms-${package}.txt"
+
+    if [ ! -f "$api_file" ]; then
+        echo "⚠️  Warning: API documentation not found for package '$package' at $api_file"
+        echo "   Skipping..."
+        continue
+    fi
+
+    echo "  📄 Creating $output_file..."
+
+    # Start with a header
+    cat > "$output_file" << EOF
 ================================================================================
-aipype Documentation
+${package} Documentation
 ================================================================================
 
-This file contains the complete documentation for the aipype framework and
-all its packages, generated from Sphinx documentation sources.
+This file contains the documentation for the ${package} package,
+generated from Sphinx documentation sources.
 
 Last generated: $(date)
 
@@ -94,36 +122,27 @@ Last generated: $(date)
 
 EOF
 
-# Add index/overview
-if [ -f "$BUILD_DIR/index.txt" ]; then
-    cat "$BUILD_DIR/index.txt" >> "$OUTPUT_FILE"
-    echo -e "\n\n" >> "$OUTPUT_FILE"
-fi
+    # Add index/overview (optional - comment out if too large)
+    if [ -f "$BUILD_DIR/index.txt" ]; then
+        cat "$BUILD_DIR/index.txt" >> "$output_file"
+        echo -e "\n\n" >> "$output_file"
+    fi
 
-# Add separator before API docs
-cat >> "$OUTPUT_FILE" << 'EOF'
+    # Add separator before API docs
+    cat >> "$output_file" << 'EOF'
 ================================================================================
 API DOCUMENTATION
 ================================================================================
 
 EOF
 
-# Add each API documentation file
-for api_file in "$BUILD_DIR/api"/*.txt; do
-    if [ -f "$api_file" ]; then
-        # Add separator with filename
-        echo "================================================================================" >> "$OUTPUT_FILE"
-        echo "$(basename "$api_file" .txt)" >> "$OUTPUT_FILE"
-        echo "================================================================================" >> "$OUTPUT_FILE"
-        echo "" >> "$OUTPUT_FILE"
+    # Add the specific package API documentation
+    cat "$api_file" >> "$output_file"
 
-        cat "$api_file" >> "$OUTPUT_FILE"
-        echo -e "\n\n" >> "$OUTPUT_FILE"
-    fi
+    echo "  ✅ Created $output_file ($(du -h "$output_file" | cut -f1))"
 done
 
-echo "✅ Documentation combined successfully"
-echo "📁 Output file: $OUTPUT_FILE"
-echo "📊 File size: $(du -h "$OUTPUT_FILE" | cut -f1)"
-
+echo ""
 echo "🎉 llms.txt generation complete!"
+echo "📁 Output directory: $OUTPUT_DIR"
+echo "📦 Packages processed: ${PACKAGES}"
