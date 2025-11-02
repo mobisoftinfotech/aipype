@@ -32,12 +32,14 @@ Usage:
 
 Output:
     Files are created in docs/_build/ directory (3 files per package):
-    - docs/_build/llms-aipype-concepts-ai.txt
-    - docs/_build/llms-aipype-examples-ai.txt
-    - docs/_build/llms-aipype-api-ai.txt
-    - docs/_build/llms-aipype-g-concepts-ai.txt
-    - docs/_build/llms-aipype-g-examples-ai.txt
-    - docs/_build/llms-aipype-g-api-ai.txt
+    - docs/_build/llms-aipype-{version}-concepts-ai.txt
+    - docs/_build/llms-aipype-{version}-examples-ai.txt
+    - docs/_build/llms-aipype-{version}-api-ai.txt
+    - docs/_build/llms-aipype-g-{version}-concepts-ai.txt
+    - docs/_build/llms-aipype-g-{version}-examples-ai.txt
+    - docs/_build/llms-aipype-g-{version}-api-ai.txt
+
+    Version is read from each package's pyproject.toml file.
 """
 
 import argparse
@@ -67,6 +69,35 @@ EXAMPLES_DIR = PROJECT_ROOT / "packages" / "aipype-examples" / "src" / "aipype_e
 
 # Size limit (25KB)
 MAX_SIZE_BYTES = 25600
+
+
+def get_package_version(package_name: str) -> str:
+    """Read version from package's pyproject.toml file.
+
+    Args:
+        package_name: Name of the package (e.g., "aipype", "aipype-g")
+
+    Returns:
+        Version string (e.g., "0.1.0a4")
+    """
+    pyproject_path = PROJECT_ROOT / "packages" / package_name / "pyproject.toml"
+
+    if not pyproject_path.exists():
+        return "unknown"
+
+    try:
+        content = pyproject_path.read_text(encoding="utf-8")
+        # Find version line: version = "0.1.0a4"
+        for line in content.split("\n"):
+            line = line.strip()
+            if line.startswith("version"):
+                # Extract version string between quotes
+                version = line.split("=")[1].strip().strip('"').strip("'")
+                return version
+    except Exception:
+        return "unknown"
+
+    return "unknown"
 
 
 class BuildRawDocsTask(BaseTask):
@@ -187,14 +218,21 @@ class DocsGeneratorAgent(PipelineAgent):
         llm_provider = self.config.get("llm_provider", "openai")
         llm_model = self.config.get("llm_model", "anthropic/claude-haiku-4-5-20251001")
 
+        # Get package version
+        version = get_package_version(package_name)
+
         # Convert package name: aipype-g -> aipype_g for file lookup
         package_file = package_name.replace("-", "_")
         raw_doc_path = DOCS_TEXT_DIR / "api" / f"{package_file}.txt"
 
-        # Output paths for 3 separate files
-        concepts_path = DOCS_BUILD_DIR / f"llms-{package_name}-concepts-ai.txt"
-        examples_path = DOCS_BUILD_DIR / f"llms-{package_name}-examples-ai.txt"
-        api_path = DOCS_BUILD_DIR / f"llms-{package_name}-api-ai.txt"
+        # Output paths for 3 separate files with version
+        concepts_path = (
+            DOCS_BUILD_DIR / f"llms-{package_name}-{version}-concepts-ai.txt"
+        )
+        examples_path = (
+            DOCS_BUILD_DIR / f"llms-{package_name}-{version}-examples-ai.txt"
+        )
+        api_path = DOCS_BUILD_DIR / f"llms-{package_name}-{version}-api-ai.txt"
 
         # Example files to include
         example_files = self._get_example_files()
@@ -595,7 +633,9 @@ def main() -> int:
     print_header("INTELLIGENT LLMS.TXT DOCUMENTATION GENERATOR")
     print(f"\nPackages: {', '.join(packages)}")
     print(f"LLM: {args.llm_model}")
-    print("Output: docs/_build/llms-{package}-[concepts|examples|api]-ai.txt\n")
+    print(
+        "Output: docs/_build/llms-{package}-{version}-[concepts|examples|api]-ai.txt\n"
+    )
 
     # Process each package
     for package in packages:
@@ -614,10 +654,13 @@ def main() -> int:
 
         agent.run()
 
+        # Get package version for file path construction
+        version = get_package_version(package)
+
         # Check if successful by verifying all 3 files were generated
-        concepts_path = DOCS_BUILD_DIR / f"llms-{package}-concepts-ai.txt"
-        examples_path = DOCS_BUILD_DIR / f"llms-{package}-examples-ai.txt"
-        api_path = DOCS_BUILD_DIR / f"llms-{package}-api-ai.txt"
+        concepts_path = DOCS_BUILD_DIR / f"llms-{package}-{version}-concepts-ai.txt"
+        examples_path = DOCS_BUILD_DIR / f"llms-{package}-{version}-examples-ai.txt"
+        api_path = DOCS_BUILD_DIR / f"llms-{package}-{version}-api-ai.txt"
 
         if concepts_path.exists() and examples_path.exists() and api_path.exists():
             # Get file sizes
