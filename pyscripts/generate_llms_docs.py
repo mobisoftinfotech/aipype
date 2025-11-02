@@ -31,9 +31,13 @@ Usage:
     python pyscripts/generate_llms_docs.py --packages aipype,aipype-extras,aipype-g
 
 Output:
-    Files are created in docs/_build/ directory:
-    - docs/_build/llms-aipype-ai.txt
-    - docs/_build/llms-aipype-g-ai.txt
+    Files are created in docs/_build/ directory (3 files per package):
+    - docs/_build/llms-aipype-concepts-ai.txt
+    - docs/_build/llms-aipype-examples-ai.txt
+    - docs/_build/llms-aipype-api-ai.txt
+    - docs/_build/llms-aipype-g-concepts-ai.txt
+    - docs/_build/llms-aipype-g-examples-ai.txt
+    - docs/_build/llms-aipype-g-api-ai.txt
 """
 
 import argparse
@@ -94,7 +98,9 @@ class BuildRawDocsTask(BaseTask):
             )
 
         except subprocess.TimeoutExpired:
-            return TaskResult.failure("BuildRawDocsTask failed: Script timeout after 120s")
+            return TaskResult.failure(
+                "BuildRawDocsTask failed: Script timeout after 120s"
+            )
         except Exception as e:
             return TaskResult.failure(
                 f"BuildRawDocsTask failed: {str(e)}",
@@ -147,7 +153,9 @@ class SaveFileTask(BaseTask):
             content = self.config.get("content", "")
 
             if not file_path:
-                return TaskResult.failure("SaveFileTask failed: file_path not specified")
+                return TaskResult.failure(
+                    "SaveFileTask failed: file_path not specified"
+                )
 
             path = Path(file_path)
             path.parent.mkdir(parents=True, exist_ok=True)
@@ -177,14 +185,16 @@ class DocsGeneratorAgent(PipelineAgent):
         """Set up the documentation generation pipeline."""
         package_name = self.config.get("package_name", "aipype")
         llm_provider = self.config.get("llm_provider", "openai")
-        llm_model = self.config.get(
-            "llm_model", "anthropic/claude-haiku-4-5-20251001"
-        )
+        llm_model = self.config.get("llm_model", "anthropic/claude-haiku-4-5-20251001")
 
         # Convert package name: aipype-g -> aipype_g for file lookup
         package_file = package_name.replace("-", "_")
         raw_doc_path = DOCS_TEXT_DIR / "api" / f"{package_file}.txt"
-        output_path = DOCS_BUILD_DIR / f"llms-{package_name}-ai.txt"
+
+        # Output paths for 3 separate files
+        concepts_path = DOCS_BUILD_DIR / f"llms-{package_name}-concepts-ai.txt"
+        examples_path = DOCS_BUILD_DIR / f"llms-{package_name}-examples-ai.txt"
+        api_path = DOCS_BUILD_DIR / f"llms-{package_name}-api-ai.txt"
 
         # Example files to include
         example_files = self._get_example_files()
@@ -213,28 +223,72 @@ class DocsGeneratorAgent(PipelineAgent):
                 llm_provider, llm_model, package_name
             ),
             # Step 5: Extract task examples (syntactically correct)
-            self._create_extract_task_examples_task(llm_provider, llm_model, package_name),
+            self._create_extract_task_examples_task(
+                llm_provider, llm_model, package_name
+            ),
             # Step 6: Extract API reference (1-liners)
             self._create_extract_api_reference_task(
                 llm_provider, llm_model, package_name
             ),
-            # Step 7: Combine into final Markdown
-            self._create_combine_markdown_task(package_name),
-            # Step 8: Validate size (<25KB)
-            self._create_validate_size_task(),
-            # Step 9: Save to file
+            # Step 7: Validate concepts size
+            self._create_validate_task(
+                "validate_concepts", "content", "extract_core_concepts.content"
+            ),
+            # Step 8: Save concepts file
             SaveFileTask(
-                "save_docs",
-                {"file_path": str(output_path)},
+                "save_concepts",
+                {"file_path": str(concepts_path)},
                 [
                     TaskDependency(
                         "content",
-                        "combine_markdown.final_markdown",
+                        "extract_core_concepts.content",
                         DependencyType.REQUIRED,
                     ),
                     TaskDependency(
                         "validation",
-                        "validate_size.data",
+                        "validate_concepts.data",
+                        DependencyType.OPTIONAL,
+                    ),
+                ],
+            ),
+            # Step 9: Validate examples size
+            self._create_validate_task(
+                "validate_examples", "content", "extract_task_examples.content"
+            ),
+            # Step 10: Save examples file
+            SaveFileTask(
+                "save_examples",
+                {"file_path": str(examples_path)},
+                [
+                    TaskDependency(
+                        "content",
+                        "extract_task_examples.content",
+                        DependencyType.REQUIRED,
+                    ),
+                    TaskDependency(
+                        "validation",
+                        "validate_examples.data",
+                        DependencyType.OPTIONAL,
+                    ),
+                ],
+            ),
+            # Step 11: Validate API reference size
+            self._create_validate_task(
+                "validate_api", "content", "extract_api_reference.content"
+            ),
+            # Step 12: Save API reference file
+            SaveFileTask(
+                "save_api",
+                {"file_path": str(api_path)},
+                [
+                    TaskDependency(
+                        "content",
+                        "extract_api_reference.content",
+                        DependencyType.REQUIRED,
+                    ),
+                    TaskDependency(
+                        "validation",
+                        "validate_api.data",
                         DependencyType.OPTIONAL,
                     ),
                 ],
@@ -242,14 +296,32 @@ class DocsGeneratorAgent(PipelineAgent):
         ]
 
     def _get_example_files(self) -> List[str]:
-        """Get list of example files to include."""
-        example_files = [
-            EXAMPLES_DIR / "tutorial" / "01_basic_print_agent.py",
-            EXAMPLES_DIR / "tutorial" / "02_llm_task.py",
-            EXAMPLES_DIR / "tutorial" / "03_dependent_tasks.py",
-            EXAMPLES_DIR / "tutorial" / "04_conditional_task.py",
-            EXAMPLES_DIR / "examples" / "structured_response_example.py",
-        ]
+        """Get list of example files to include based on package."""
+        package_name = self.config.get("package_name", "aipype")
+
+        # Define package-specific example files
+        if package_name == "aipype":
+            # Core framework examples
+            example_files = [
+                EXAMPLES_DIR / "tutorial" / "01_basic_print_agent.py",
+                EXAMPLES_DIR / "tutorial" / "02_llm_task.py",
+                EXAMPLES_DIR / "tutorial" / "03_dependent_tasks.py",
+                EXAMPLES_DIR / "tutorial" / "04_conditional_task.py",
+                EXAMPLES_DIR / "examples" / "structured_response_example.py",
+            ]
+        elif package_name == "aipype-g":
+            # Google API integration examples
+            example_files = [
+                EXAMPLES_DIR / "examples" / "gmail_test_agent.py",
+            ]
+        elif package_name == "aipype-extras":
+            # No examples for aipype-extras yet - return empty list
+            # The LLM will work from API docs only
+            example_files = []
+        else:
+            # Default: try to find any examples
+            example_files = []
+
         return [str(f) for f in example_files if f.exists()]
 
     def _create_extract_docs_content_task(self, raw_doc_path: str) -> TransformTask:
@@ -331,30 +403,35 @@ Output a clear, comprehensive explanation suitable for developers learning the f
         self, llm_provider: str, llm_model: str, package_name: str
     ) -> LLMTask:
         """Create task to extract and create concise examples."""
-        prompt = """Based on the example files provided, create comprehensive, syntactically correct Python code examples for the main task types in {package_name}.
+        prompt = """Based on the raw documentation and example files provided, create comprehensive, syntactically correct Python code examples for the main components in {package_name}.
 
-For each task type (LLMTask, SearchTask, TransformTask, ConditionalTask, etc.), create a minimal but COMPLETE and RUNNABLE example showing:
+Create minimal but COMPLETE and RUNNABLE examples showing:
 - Necessary imports
-- Task creation
+- Component creation and configuration
 - Key configuration parameters
-- Usage pattern
+- Usage patterns
 
-IMPORTANT: Also include a comprehensive pipeline example showing:
+IMPORTANT: If example files are provided, use them as reference but create cleaner, more concise versions. If no example files are provided, create examples based on the raw documentation.
+
+For packages with tasks (like aipype), include a comprehensive pipeline example showing:
 - Multiple tasks with dependencies (TaskDependency)
 - How data flows between tasks using TaskContext
 - Both REQUIRED and OPTIONAL dependency types
 - A complete PipelineAgent implementation
 
-Example files:
+Raw documentation:
+${{raw_docs}}
+
+Example files (may be empty):
 ${{examples_content}}
 
 Requirements:
 1. Code must be syntactically correct and runnable
 2. Use proper Python code blocks with ```python
-3. Keep individual task examples minimal but complete
-4. Include the pipeline example to show task orchestration
-5. Include brief comments explaining key parts
-6. Format as Markdown with headers for each task type (## Task Examples, ### LLMTask, ### Pipeline Example, etc.)
+3. Keep examples minimal but complete
+4. Include brief comments explaining key parts
+5. Format as Markdown with headers (## Usage Examples, ### Component Name, etc.)
+6. If no examples are provided, create them from the API documentation
 
 Output the examples section in Markdown format."""
 
@@ -369,8 +446,13 @@ Output the examples section in Markdown format."""
             },
             [
                 TaskDependency(
-                    "examples_content", "extract_examples_content.examples_content", DependencyType.REQUIRED
-                )
+                    "raw_docs", "extract_docs_content.raw_docs", DependencyType.REQUIRED
+                ),
+                TaskDependency(
+                    "examples_content",
+                    "extract_examples_content.examples_content",
+                    DependencyType.OPTIONAL,
+                ),
             ],
         )
 
@@ -431,61 +513,25 @@ IMPORTANT: Be comprehensive - include all major classes and their key methods. U
             ],
         )
 
-    def _create_combine_markdown_task(self, package_name: str) -> TransformTask:
-        """Create task to combine sections into final Markdown."""
+    def _create_validate_task(
+        self, task_name: str, content_name: str, source_path: str
+    ) -> ConditionalTask:
+        """Create task to validate output size.
 
-        def combine_sections(
-            core_concepts: str, examples: str, api_reference: str
-        ) -> str:
-            """Combine all sections into final Markdown document."""
-            markdown = f"""# {package_name} Documentation
+        Args:
+            task_name: Name for the validation task (e.g., "validate_concepts")
+            content_name: Name of the content input parameter (e.g., "content")
+            source_path: Path to content in context (e.g., "extract_core_concepts.content")
+        """
 
-{core_concepts}
-
-{examples}
-
-{api_reference}
-
----
-*Generated with aipype DocsGeneratorAgent*
-"""
-            return markdown.strip()
-
-        return TransformTask(
-            "combine_markdown",
-            {
-                "transform_function": combine_sections,
-                "input_fields": ["core_concepts", "examples", "api_reference"],
-                "output_name": "final_markdown",
-            },
-            [
-                TaskDependency(
-                    "core_concepts",
-                    "extract_core_concepts.content",
-                    DependencyType.REQUIRED,
-                ),
-                TaskDependency(
-                    "examples", "extract_task_examples.content", DependencyType.REQUIRED
-                ),
-                TaskDependency(
-                    "api_reference",
-                    "extract_api_reference.content",
-                    DependencyType.REQUIRED,
-                ),
-            ],
-        )
-
-    def _create_validate_size_task(self) -> ConditionalTask:
-        """Create task to validate output size."""
-
-        def check_size(final_markdown: str) -> bool:
-            """Check if markdown is under size limit."""
-            size_bytes = len(final_markdown.encode("utf-8"))
+        def check_size(content: str) -> bool:
+            """Check if content is under size limit."""
+            size_bytes = len(content.encode("utf-8"))
             return size_bytes <= MAX_SIZE_BYTES
 
-        def handle_size_exceeded(final_markdown: str) -> Dict[str, Any]:
+        def handle_size_exceeded(content: str) -> Dict[str, Any]:
             """Handle case where size limit is exceeded."""
-            size_bytes = len(final_markdown.encode("utf-8"))
+            size_bytes = len(content.encode("utf-8"))
             size_kb = round(size_bytes / 1024, 2)
             raise RuntimeError(
                 f"Documentation size {size_kb}KB exceeds limit of {MAX_SIZE_BYTES / 1024}KB. "
@@ -493,22 +539,24 @@ IMPORTANT: Be comprehensive - include all major classes and their key methods. U
             )
 
         return ConditionalTask(
-            "validate_size",
+            task_name,
             {
                 "condition_function": check_size,
-                "condition_inputs": ["final_markdown"],
-                "then_function": lambda markdown: {  # pyright: ignore
+                "condition_inputs": [content_name],
+                "then_function": lambda content: {  # pyright: ignore
                     "validation_result": "passed",
-                    "size_bytes": len(markdown.encode("utf-8")),  # pyright: ignore
-                    "size_kb": round(len(markdown.encode("utf-8")) / 1024, 2),  # pyright: ignore
+                    "size_bytes": len(content.encode("utf-8")),  # pyright: ignore
+                    "size_kb": round(len(content.encode("utf-8")) / 1024, 2),  # pyright: ignore
                 },
-                "else_function": handle_size_exceeded,
+                "else_function": lambda content: handle_size_exceeded(
+                    content
+                ),  # Fixed: wrapped in lambda
                 "skip_reason": "Size validation skipped",
             },
             [
                 TaskDependency(
-                    "final_markdown",
-                    "combine_markdown.final_markdown",
+                    content_name,
+                    source_path,
                     DependencyType.REQUIRED,
                 )
             ],
@@ -547,13 +595,13 @@ def main() -> int:
     print_header("INTELLIGENT LLMS.TXT DOCUMENTATION GENERATOR")
     print(f"\nPackages: {', '.join(packages)}")
     print(f"LLM: {args.llm_model}")
-    print(f"Output: docs/_build/llms-{{package}}-ai.txt\n")
+    print("Output: docs/_build/llms-{package}-[concepts|examples|api]-ai.txt\n")
 
     # Process each package
     for package in packages:
-        print(f"\n{'='*60}")
+        print(f"\n{'=' * 60}")
         print(f"Processing: {package}")
-        print(f"{'='*60}\n")
+        print(f"{'=' * 60}\n")
 
         agent = DocsGeneratorAgent(
             f"docs-generator-{package}",
@@ -566,20 +614,29 @@ def main() -> int:
 
         agent.run()
 
-        # Check if successful
-        if agent.context:
-            save_result = agent.context.get_path_value("save_docs.data")
-            if save_result:
-                print(f"\nGenerated: {save_result.get('file_path')}")
-                print(f"   Size: {save_result.get('size_kb')}KB")
-            else:
-                print(f"\nFailed to generate documentation for {package}")
-                agent.display_results()
-                return 1
+        # Check if successful by verifying all 3 files were generated
+        concepts_path = DOCS_BUILD_DIR / f"llms-{package}-concepts-ai.txt"
+        examples_path = DOCS_BUILD_DIR / f"llms-{package}-examples-ai.txt"
+        api_path = DOCS_BUILD_DIR / f"llms-{package}-api-ai.txt"
 
-    print(f"\n{'='*60}")
+        if concepts_path.exists() and examples_path.exists() and api_path.exists():
+            # Get file sizes
+            concepts_size = round(concepts_path.stat().st_size / 1024, 2)
+            examples_size = round(examples_path.stat().st_size / 1024, 2)
+            api_size = round(api_path.stat().st_size / 1024, 2)
+
+            print(f"\n✅ Generated 3 files for {package}:")
+            print(f"   📝 Concepts: {concepts_path} ({concepts_size}KB)")
+            print(f"   📚 Examples: {examples_path} ({examples_size}KB)")
+            print(f"   📖 API Reference: {api_path} ({api_size}KB)")
+        else:
+            print(f"\n❌ Failed to generate documentation for {package}")
+            agent.display_results()
+            return 1
+
+    print(f"\n{'=' * 60}")
     print("All packages processed successfully!")
-    print(f"{'='*60}\n")
+    print(f"{'=' * 60}\n")
 
     return 0
 
