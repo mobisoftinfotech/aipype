@@ -750,11 +750,12 @@ class LLMTask(BaseTask):
             True if valid MCP config
         """
         # Runtime validation needed for dynamic config data
-        if not isinstance(config, dict):  # pyright: ignore[reportUnnecessaryIsInstance]
+        if not isinstance(config, dict):
             return False
 
         # Must have type field set to "mcp" or "url"
-        config_type = config.get("type")
+        # Dynamic config data from user input, type cannot be narrowed at compile time
+        config_type: Optional[str] = config.get("type")  # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType]
         if config_type not in ["mcp", "url"]:
             return False
 
@@ -793,7 +794,7 @@ class LLMTask(BaseTask):
                 if not hasattr(tool, "_is_tool"):
                     return False
             # Check if it's an MCP server config (dict)
-            elif isinstance(tool, dict):  # pyright: ignore[reportUnnecessaryIsInstance]
+            elif isinstance(tool, dict):
                 if not self._validate_mcp_config(tool):
                     return False
             else:
@@ -821,7 +822,7 @@ class LLMTask(BaseTask):
             pass
 
         # Check if it's a dict with the correct structure
-        if isinstance(value, dict):  # pyright: ignore[reportUnnecessaryIsInstance]
+        if isinstance(value, dict):
             # Must have "type" field
             if "type" not in value:
                 return False
@@ -830,8 +831,9 @@ class LLMTask(BaseTask):
             if value["type"] == "json_schema":
                 if "json_schema" not in value:
                     return False
-                json_schema = value["json_schema"]
-                if not isinstance(json_schema, dict):  # pyright: ignore[reportUnnecessaryIsInstance]
+                # Dynamic response_format structure from user input
+                json_schema: Any = value["json_schema"]  # pyright: ignore[reportUnknownVariableType]
+                if not isinstance(json_schema, dict):
                     return False
                 if "name" not in json_schema or "schema" not in json_schema:
                     return False
@@ -860,7 +862,8 @@ class LLMTask(BaseTask):
                 python_functions.append(tool)
             elif isinstance(tool, dict):
                 # MCP server configuration - store for later use
-                mcp_configs.append(tool)
+                # Tool config from dynamic user input, type narrowed by isinstance
+                mcp_configs.append(tool)  # pyright: ignore[reportUnknownArgumentType]
 
         # Store MCP configurations
         self.mcp_tools = mcp_configs
@@ -898,22 +901,24 @@ class LLMTask(BaseTask):
         Returns:
             Modified schema with additionalProperties set
         """
-        if isinstance(schema, dict):
-            # If this is an object type, add additionalProperties: false
-            if schema.get("type") == "object":
-                schema["additionalProperties"] = False
+        # If this is an object type, add additionalProperties: false
+        if schema.get("type") == "object":
+            schema["additionalProperties"] = False
 
-            # Recursively process nested schemas
-            for key, value in schema.items():
-                if isinstance(value, dict):
-                    schema[key] = self._add_additional_properties(value)
-                elif isinstance(value, list):
-                    schema[key] = [
-                        self._add_additional_properties(item)
-                        if isinstance(item, dict)
-                        else item
-                        for item in value
-                    ]
+        # Recursively process nested schemas
+        for key, value in schema.items():
+            if isinstance(value, dict):
+                # JSON schema structures are dynamic, type narrowed by isinstance
+                schema[key] = self._add_additional_properties(value)  # pyright: ignore[reportUnknownArgumentType]
+            elif isinstance(value, list):
+                # JSON schema array items are dynamic, type narrowed by isinstance
+                processed_items: List[Any] = [
+                    self._add_additional_properties(item)  # pyright: ignore[reportUnknownArgumentType]
+                    if isinstance(item, dict)
+                    else item
+                    for item in value  # pyright: ignore[reportUnknownVariableType]
+                ]
+                schema[key] = processed_items
 
         return schema
 
@@ -930,7 +935,7 @@ class LLMTask(BaseTask):
             Dict in litellm response_format structure
         """
         # Generate base schema from Pydantic model
-        base_schema = model.model_json_schema()  # type: ignore
+        base_schema = model.model_json_schema()
 
         # Add additionalProperties: false recursively (required for OpenAI strict mode)
         schema_with_additional_props = self._add_additional_properties(base_schema)
@@ -955,7 +960,7 @@ class LLMTask(BaseTask):
             model = self.config["llm_model"]
 
             # Use litellm's built-in support checking
-            return litellm.utils.supports_response_schema(  # type: ignore
+            return litellm.utils.supports_response_schema(
                 model=model,
                 custom_llm_provider=provider if provider != "openai" else None,
             )
@@ -994,16 +999,21 @@ class LLMTask(BaseTask):
                 "json_schema" in response_format
                 and "schema" in response_format["json_schema"]
             ):
-                schema = response_format["json_schema"]["schema"]
+                # Dynamic response_format structure from user input
+                json_schema_obj: Dict[str, Any] = response_format["json_schema"]  # pyright: ignore[reportUnknownVariableType]
+                schema: Dict[str, Any] = json_schema_obj["schema"]  # pyright: ignore[reportUnknownVariableType]
                 # Process schema to add additionalProperties: false
-                processed_schema = self._add_additional_properties(schema)
+                processed_schema = self._add_additional_properties(schema)  # pyright: ignore[reportUnknownArgumentType]
                 # Create a new response_format dict with the processed schema
+                schema_name: str = json_schema_obj.get("name", "Unknown")  # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType]
+                strict_flag: bool = json_schema_obj.get("strict", True)  # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType]
+
                 self.response_format_config = {
-                    "type": response_format.get("type", "json_schema"),
+                    "type": response_format.get("type", "json_schema"),  # pyright: ignore[reportUnknownMemberType]
                     "json_schema": {
-                        "name": response_format["json_schema"].get("name", "Unknown"),
+                        "name": schema_name,
                         "schema": processed_schema,
-                        "strict": response_format["json_schema"].get("strict", True),
+                        "strict": strict_flag,
                     },
                 }
             else:
@@ -1012,11 +1022,17 @@ class LLMTask(BaseTask):
 
             self.response_format_type = "json_schema"
             self.supports_response_format = True
-            schema_name = response_format.get("json_schema", {}).get("name", "unknown")
-            self.logger.info(f"Configured JSON schema response format: {schema_name}")
+            # Dynamic response_format structure, safe to access after validation
+            schema_name_log: str = response_format.get("json_schema", {}).get(  # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType]
+                "name", "unknown"
+            )
+            self.logger.info(
+                f"Configured JSON schema response format: {schema_name_log}"
+            )
         else:
+            # Dynamic response_format type from user input
             raise ValueError(
-                f"Invalid response_format type: {type(response_format)}. "
+                f"Invalid response_format type: {type(response_format)}. "  # pyright: ignore[reportUnknownArgumentType]
                 f"Must be a Pydantic BaseModel class or dict with json_schema structure."
             )
 
@@ -1189,10 +1205,10 @@ class LLMTask(BaseTask):
                     # Build combined tools list for continuation
                     combined_tools_continuation: List[Dict[str, Any]] = []
 
-                    if has_python_tools:
+                    if has_python_tools and self.tool_registry is not None:
                         combined_tools_continuation.extend(
                             self.tool_registry.get_tool_schemas()
-                        )  # type: ignore
+                        )
 
                     if has_mcp_tools:
                         combined_tools_continuation.extend(self.mcp_tools)

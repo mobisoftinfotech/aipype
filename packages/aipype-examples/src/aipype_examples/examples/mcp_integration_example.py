@@ -59,9 +59,9 @@ directory can be read, making it safe to expose over NGrok.
 """
 
 import os
-from typing import List
+from typing import List, override
 
-from aipype import LLMTask, PipelineAgent
+from aipype import BaseTask, LLMTask, PipelineAgent
 from aipype.tools import tool
 
 
@@ -102,7 +102,8 @@ class MCPOnlyAgent(PipelineAgent):
         Uses Claude with NGrok-exposed MCP server for internet accessibility.
     """
 
-    def setup_tasks(self) -> List[LLMTask]:
+    @override
+    def setup_tasks(self) -> List[BaseTask]:
         # Get configuration values
         filename = self.config.get("filename", "")
         topic = self.config.get("topic", "")
@@ -161,7 +162,8 @@ class MixedToolsAgent(PipelineAgent):
         Demonstrates mixing Python tools with MCP tools using Claude.
     """
 
-    def setup_tasks(self) -> List[LLMTask]:
+    @override
+    def setup_tasks(self) -> List[BaseTask]:
         # Get configuration values
         filename = self.config.get("filename", "")
 
@@ -225,7 +227,8 @@ class RestrictedMCPToolsAgent(PipelineAgent):
         MCP tools are available to the LLM.
     """
 
-    def setup_tasks(self) -> List[LLMTask]:
+    @override
+    def setup_tasks(self) -> List[BaseTask]:
         # Get configuration values
         file1 = self.config.get("file1", "")
         file2 = self.config.get("file2", "")
