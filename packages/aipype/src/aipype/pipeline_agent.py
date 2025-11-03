@@ -1151,9 +1151,12 @@ class PipelineAgent:
                 # Result is always dict[str, Any] from context
                 # Check for TransformTask pattern with output_name
                 if "output_name" in result:
-                    output_name = result.get("output_name")
+                    output_name: Optional[str] = result.get("output_name")
                     if output_name and output_name in result:
-                        data = result[output_name]
+                        nested_data: Any = result[output_name]
+                        if isinstance(nested_data, dict):
+                            # Dynamic task result structure
+                            data = nested_data  # pyright: ignore[reportUnknownVariableType]
                 # Check for direct nested data in known keys
                 elif "result" in result and isinstance(result["result"], dict):
                     # Task result data structures are dynamic based on task implementations
@@ -1162,7 +1165,7 @@ class PipelineAgent:
                 # Show content preview if available
                 if "content" in data:
                     # Dynamic task result content can be any type, convert to string for display
-                    content = data.get("content", "")
+                    content: Any = data.get("content", "")  # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType]
                     if isinstance(content, str) and content.strip():
                         preview = (
                             content[:150] + "..." if len(content) > 150 else content
@@ -1172,33 +1175,39 @@ class PipelineAgent:
                 # Show token usage if available (for LLM tasks)
                 if "usage" in data:
                     # LLM response usage data structure varies by provider
-                    usage = data["usage"]
-                    total_tokens = usage.get("total_tokens", 0)
-                    if total_tokens > 0:
-                        # Token counts are numeric values from LLM providers
-                        prompt_tokens = usage.get("prompt_tokens", 0)
-                        completion_tokens = usage.get("completion_tokens", 0)
-                        print(
-                            f"  Tokens: {total_tokens} ({prompt_tokens} prompt + {completion_tokens} completion)"
-                        )
+                    usage: Any = data["usage"]  # pyright: ignore[reportUnknownVariableType]
+                    if isinstance(usage, dict):
+                        # Dynamic usage structure from LLM provider response
+                        total_tokens: int = usage.get("total_tokens", 0)  # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType]
+                        if total_tokens > 0:
+                            # Token counts are numeric values from LLM providers
+                            prompt_tokens: int = usage.get("prompt_tokens", 0)  # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType]
+                            completion_tokens: int = usage.get("completion_tokens", 0)  # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType]
+                            print(
+                                f"  Tokens: {total_tokens} ({prompt_tokens} prompt + {completion_tokens} completion)"
+                            )
 
                     # Show basic result info for other task types
                     # Show key result metrics based on common patterns
                     if "total_urls" in data:  # URL fetch tasks
                         # URL fetch task metrics are dynamic based on task implementation
-                        print(f"  URLs Processed: {data.get('total_urls', 0)}")
-                        print(f"  Successful: {data.get('successful_fetches', 0)}")
+                        total_urls: int = data.get("total_urls", 0)  # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType]
+                        successful_fetches: int = data.get("successful_fetches", 0)  # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType]
+                        print(f"  URLs Processed: {total_urls}")
+                        print(f"  Successful: {successful_fetches}")
                     elif "query" in data:  # Search tasks
                         # Search task data structure varies by search provider
-                        print(f"  Query: {data.get('query', 'Unknown')}")
-                        search_results = data.get("results", [])
-                        print(f"  Results Found: {len(search_results)}")
+                        query: str = data.get("query", "Unknown")  # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType]
+                        search_results: List[Any] = data.get("results", [])  # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType]
+                        print(f"  Query: {query}")
+                        print(f"  Results Found: {len(search_results)}")  # pyright: ignore[reportUnknownArgumentType]
                     elif "file_path" in data:  # File save tasks
                         # File save task results have dynamic file path structure
-                        print(f"  Saved to: {data.get('file_path', 'Unknown')}")
+                        file_path: str = data.get("file_path", "Unknown")  # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType]
+                        print(f"  Saved to: {file_path}")
                     elif "condition_result" in data:  # Conditional tasks
                         # Conditional task results have boolean condition status
-                        condition_met = data.get("condition_result", False)
+                        condition_met: bool = data.get("condition_result", False)  # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType]
                         print(
                             f"  Condition Met: {'✅ Yes' if condition_met else '❌ No'}"
                         )
@@ -1206,17 +1215,26 @@ class PipelineAgent:
                 # For direct result dictionaries (LLM tasks, etc.)
                 else:
                     if "total_urls" in result:  # URL fetch tasks
-                        print(f"  URLs Processed: {result.get('total_urls', 0)}")
-                        print(f"  Successful: {result.get('successful_fetches', 0)}")
+                        # Dynamic task result data structure
+                        total_urls_res: int = result.get("total_urls", 0)
+                        successful_res: int = result.get("successful_fetches", 0)
+                        print(f"  URLs Processed: {total_urls_res}")
+                        print(f"  Successful: {successful_res}")
                     elif "query" in result:  # Search tasks
-                        print(f"  Query: {result.get('query', 'Unknown')}")
-                        print(f"  Results Found: {len(result.get('results', []))}")
+                        # Dynamic task result data structure
+                        query_res: str = result.get("query", "Unknown")
+                        results_list: List[Any] = result.get("results", [])
+                        print(f"  Query: {query_res}")
+                        print(f"  Results Found: {len(results_list)}")
                     elif "file_path" in result:  # File save tasks
-                        print(f"  Saved to: {result.get('file_path', 'Unknown')}")
+                        # Dynamic task result data structure
+                        file_path_res: str = result.get("file_path", "Unknown")
+                        print(f"  Saved to: {file_path_res}")
                     elif "condition_result" in result:  # Conditional tasks
-                        condition_met = result.get("condition_result", False)
+                        # Dynamic task result data structure
+                        condition_met_res: bool = result.get("condition_result", False)
                         print(
-                            f"  Condition Met: {'✅ Yes' if condition_met else '❌ No'}"
+                            f"  Condition Met: {'✅ Yes' if condition_met_res else '❌ No'}"
                         )
 
     def _display_errors_section(self) -> None:

@@ -51,14 +51,22 @@ def run_pyright(
 
             try:
                 data = json.loads(result.stdout)
-                print(f"Type checking results for {target}:")
-                print(f"  Errors: {data.get('errorCount', 0)}")
-                print(f"  Warnings: {data.get('warningCount', 0)}")
-                print(f"  Information: {data.get('informationCount', 0)}")
+                summary = data.get("summary", {})
+                error_count = summary.get("errorCount", 0)
+                warning_count = summary.get("warningCount", 0)
+                info_count = summary.get("informationCount", 0)
 
-                if data.get("errorCount", 0) == 0 and data.get("warningCount", 0) == 0:
+                print(f"Type checking results for {target}:")
+                print(f"  Errors: {error_count}")
+                print(f"  Warnings: {warning_count}")
+                print(f"  Information: {info_count}")
+
+                if error_count == 0 and warning_count == 0 and info_count == 0:
                     print("  [SUCCESS] No type issues found!")
-                    return 0  # Override exit code if no actual issues
+                    return 0
+                else:
+                    # Return non-zero exit code if any issues found
+                    return 1
 
             except json.JSONDecodeError:
                 print("Failed to parse pyright JSON output")

@@ -27,6 +27,7 @@ classifiers = [
 dependencies = [
     "aipype>=0.1.0a1",
     "aipype-g>=0.1.0a1",
+    "fastmcp>=2.0.0",  # For MCP server examples
 ]
 
 [project.urls]

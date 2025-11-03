@@ -45,6 +45,42 @@ Enable function calling with automatic tool management:
         "llm_model": "gpt-4"
     })
 
+**MCP Integration**
+
+Use Model Context Protocol servers alongside or instead of Python tools:
+
+.. code-block:: python
+
+    # MCP server only
+    task = LLMTask("web_research", {
+        "prompt": "Search for ${topic} and summarize findings",
+        "tools": [
+            {
+                "type": "mcp",
+                "server_label": "brave_search",
+                "server_url": "https://mcp.brave.com",
+                "require_approval": "never"
+            }
+        ],
+        "llm_provider": "anthropic",
+        "llm_model": "claude-sonnet-4"
+    })
+
+    # Mixed: Python tools + MCP servers
+    task = LLMTask("comprehensive_research", {
+        "prompt": "Research ${topic} using all available tools",
+        "tools": [
+            local_calculator_tool,  # Python @tool function
+            {
+                "type": "mcp",
+                "server_label": "web_search",
+                "server_url": "https://mcp.example.com"
+            }
+        ],
+        "llm_provider": "openai",
+        "llm_model": "gpt-4"
+    })
+
 **Structured Outputs**
 
 Get typed, structured responses using Pydantic models or JSON schemas:
@@ -429,7 +465,12 @@ class LLMTask(BaseTask):
 
                 **Tool Calling:**
 
-                - tools (List[Callable], optional): List of @tool decorated functions
+                - tools (List[Callable | Dict], optional): List of @tool decorated functions
+                  and/or MCP server configurations. Each item can be:
+
+                  * Python function: Decorated with @tool for local execution
+                  * MCP config dict: {"type": "mcp", "server_label": "...", "server_url": "..."}
+
                 - tool_choice (str, optional): "auto", "none", or specific tool name
                 - parallel_tool_calls (bool): Enable parallel tool execution (default: True)
                 - max_tool_execution_time (float): Tool timeout in seconds (default: 30)
@@ -592,6 +633,7 @@ class LLMTask(BaseTask):
         self.tool_executor: Optional[ToolExecutor] = None
         self.supports_tools: bool = False
         self.tool_setup_error: Optional[str] = None
+        self.mcp_tools: List[Dict[str, Any]] = []  # MCP server configurations
 
         # Structured response instance variables
         self.response_format_type: Optional[str] = (
@@ -698,11 +740,46 @@ class LLMTask(BaseTask):
 
         return None
 
-    def _validate_tools(self, tools: List[Callable[..., Any]]) -> bool:
-        """Validate tools configuration.
+    def _validate_mcp_config(self, config: Any) -> bool:
+        """Validate MCP server configuration.
 
         Args:
-            tools: List of tool functions to validate
+            config: MCP server configuration dict
+
+        Returns:
+            True if valid MCP config
+        """
+        # Runtime validation needed for dynamic config data
+        if not isinstance(config, dict):
+            return False
+
+        # Must have type field set to "mcp" or "url"
+        # Dynamic config data from user input, type cannot be narrowed at compile time
+        config_type: Optional[str] = config.get("type")  # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType]
+        if config_type not in ["mcp", "url"]:
+            return False
+
+        # Type "mcp" requires server_label and server_url
+        if config_type == "mcp":
+            if "server_label" not in config:
+                return False
+            if "server_url" not in config:
+                return False
+
+        # Type "url" requires url and name
+        if config_type == "url":
+            if "url" not in config:
+                return False
+            if "name" not in config:
+                return False
+
+        return True
+
+    def _validate_tools(self, tools: List[Any]) -> bool:
+        """Validate tools configuration (Python functions and/or MCP servers).
+
+        Args:
+            tools: List of tool functions (@tool decorated) or MCP server configs (dicts)
 
         Returns:
             True if all tools are valid
@@ -712,9 +789,16 @@ class LLMTask(BaseTask):
             return False
 
         for tool in tools:
-            if not callable(tool):
-                return False
-            if not hasattr(tool, "_is_tool"):
+            # Check if it's a Python function (callable with @tool decorator)
+            if callable(tool):
+                if not hasattr(tool, "_is_tool"):
+                    return False
+            # Check if it's an MCP server config (dict)
+            elif isinstance(tool, dict):
+                if not self._validate_mcp_config(tool):
+                    return False
+            else:
+                # Not a valid tool type
                 return False
 
         return True
@@ -738,7 +822,7 @@ class LLMTask(BaseTask):
             pass
 
         # Check if it's a dict with the correct structure
-        if isinstance(value, dict):  # pyright: ignore[reportUnnecessaryIsInstance]
+        if isinstance(value, dict):
             # Must have "type" field
             if "type" not in value:
                 return False
@@ -747,8 +831,9 @@ class LLMTask(BaseTask):
             if value["type"] == "json_schema":
                 if "json_schema" not in value:
                     return False
-                json_schema = value["json_schema"]
-                if not isinstance(json_schema, dict):  # pyright: ignore[reportUnnecessaryIsInstance]
+                # Dynamic response_format structure from user input
+                json_schema: Any = value["json_schema"]  # pyright: ignore[reportUnknownVariableType]
+                if not isinstance(json_schema, dict):
                     return False
                 if "name" not in json_schema or "schema" not in json_schema:
                     return False
@@ -758,27 +843,51 @@ class LLMTask(BaseTask):
         return False
 
     def _setup_tool_support(self) -> None:
-        """Initialize tool registry and executor from function list."""
-        tool_functions = self.config["tools"]
+        """Initialize tool registry and executor, separating Python functions from MCP configs."""
+        tools = self.config["tools"]
 
-        # Validate all functions are decorated with @tool
-        for func in tool_functions:
-            if not hasattr(func, "_is_tool"):
-                func_name = getattr(func, "__name__", str(func))
-                raise ValueError(
-                    f"Function {func_name} must be decorated with @tool. "
-                    f"Add '@tool' decorator above the function definition."
-                )
+        # Separate Python functions from MCP server configurations
+        python_functions: List[Callable[..., Any]] = []
+        mcp_configs: List[Dict[str, Any]] = []
 
-        # Create registry and executor
-        max_exec_time = self.config.get("max_tool_execution_time", 30.0)
-        self.tool_registry = ToolRegistry(tool_functions)
-        self.tool_executor = ToolExecutor(self.tool_registry, max_exec_time)
-        self.supports_tools = True
+        for tool in tools:
+            if callable(tool):
+                # Python function - validate it's decorated with @tool
+                if not hasattr(tool, "_is_tool"):
+                    func_name = getattr(tool, "__name__", str(tool))
+                    raise ValueError(
+                        f"Function {func_name} must be decorated with @tool. "
+                        f"Add '@tool' decorator above the function definition."
+                    )
+                python_functions.append(tool)
+            elif isinstance(tool, dict):
+                # MCP server configuration - store for later use
+                # Tool config from dynamic user input, type narrowed by isinstance
+                mcp_configs.append(tool)  # pyright: ignore[reportUnknownArgumentType]
 
-        self.logger.info(
-            f"Initialized {len(tool_functions)} tools for task '{self.name}'"
-        )
+        # Store MCP configurations
+        self.mcp_tools = mcp_configs
+
+        # Initialize Python tool registry and executor if we have Python functions
+        if python_functions:
+            max_exec_time = self.config.get("max_tool_execution_time", 30.0)
+            self.tool_registry = ToolRegistry(python_functions)
+            self.tool_executor = ToolExecutor(self.tool_registry, max_exec_time)
+            self.supports_tools = True
+
+            self.logger.info(
+                f"Initialized {len(python_functions)} Python tools for task '{self.name}'"
+            )
+
+        # Log MCP tools if present
+        if mcp_configs:
+            mcp_labels = [
+                cfg.get("server_label", cfg.get("name", "unknown"))
+                for cfg in mcp_configs
+            ]
+            self.logger.info(
+                f"Configured {len(mcp_configs)} MCP servers for task '{self.name}': {mcp_labels}"
+            )
 
     def _add_additional_properties(self, schema: Dict[str, Any]) -> Dict[str, Any]:
         """Recursively add additionalProperties: false to all objects in schema.
@@ -792,22 +901,24 @@ class LLMTask(BaseTask):
         Returns:
             Modified schema with additionalProperties set
         """
-        if isinstance(schema, dict):
-            # If this is an object type, add additionalProperties: false
-            if schema.get("type") == "object":
-                schema["additionalProperties"] = False
+        # If this is an object type, add additionalProperties: false
+        if schema.get("type") == "object":
+            schema["additionalProperties"] = False
 
-            # Recursively process nested schemas
-            for key, value in schema.items():
-                if isinstance(value, dict):
-                    schema[key] = self._add_additional_properties(value)
-                elif isinstance(value, list):
-                    schema[key] = [
-                        self._add_additional_properties(item)
-                        if isinstance(item, dict)
-                        else item
-                        for item in value
-                    ]
+        # Recursively process nested schemas
+        for key, value in schema.items():
+            if isinstance(value, dict):
+                # JSON schema structures are dynamic, type narrowed by isinstance
+                schema[key] = self._add_additional_properties(value)  # pyright: ignore[reportUnknownArgumentType]
+            elif isinstance(value, list):
+                # JSON schema array items are dynamic, type narrowed by isinstance
+                processed_items: List[Any] = [
+                    self._add_additional_properties(item)  # pyright: ignore[reportUnknownArgumentType]
+                    if isinstance(item, dict)
+                    else item
+                    for item in value  # pyright: ignore[reportUnknownVariableType]
+                ]
+                schema[key] = processed_items
 
         return schema
 
@@ -824,7 +935,7 @@ class LLMTask(BaseTask):
             Dict in litellm response_format structure
         """
         # Generate base schema from Pydantic model
-        base_schema = model.model_json_schema()  # type: ignore
+        base_schema = model.model_json_schema()
 
         # Add additionalProperties: false recursively (required for OpenAI strict mode)
         schema_with_additional_props = self._add_additional_properties(base_schema)
@@ -849,7 +960,7 @@ class LLMTask(BaseTask):
             model = self.config["llm_model"]
 
             # Use litellm's built-in support checking
-            return litellm.utils.supports_response_schema(  # type: ignore
+            return litellm.utils.supports_response_schema(
                 model=model,
                 custom_llm_provider=provider if provider != "openai" else None,
             )
@@ -888,16 +999,21 @@ class LLMTask(BaseTask):
                 "json_schema" in response_format
                 and "schema" in response_format["json_schema"]
             ):
-                schema = response_format["json_schema"]["schema"]
+                # Dynamic response_format structure from user input
+                json_schema_obj: Dict[str, Any] = response_format["json_schema"]  # pyright: ignore[reportUnknownVariableType]
+                schema: Dict[str, Any] = json_schema_obj["schema"]  # pyright: ignore[reportUnknownVariableType]
                 # Process schema to add additionalProperties: false
-                processed_schema = self._add_additional_properties(schema)
+                processed_schema = self._add_additional_properties(schema)  # pyright: ignore[reportUnknownArgumentType]
                 # Create a new response_format dict with the processed schema
+                schema_name: str = json_schema_obj.get("name", "Unknown")  # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType]
+                strict_flag: bool = json_schema_obj.get("strict", True)  # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType]
+
                 self.response_format_config = {
-                    "type": response_format.get("type", "json_schema"),
+                    "type": response_format.get("type", "json_schema"),  # pyright: ignore[reportUnknownMemberType]
                     "json_schema": {
-                        "name": response_format["json_schema"].get("name", "Unknown"),
+                        "name": schema_name,
                         "schema": processed_schema,
-                        "strict": response_format["json_schema"].get("strict", True),
+                        "strict": strict_flag,
                     },
                 }
             else:
@@ -906,11 +1022,17 @@ class LLMTask(BaseTask):
 
             self.response_format_type = "json_schema"
             self.supports_response_format = True
-            schema_name = response_format.get("json_schema", {}).get("name", "unknown")
-            self.logger.info(f"Configured JSON schema response format: {schema_name}")
+            # Dynamic response_format structure, safe to access after validation
+            schema_name_log: str = response_format.get("json_schema", {}).get(  # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType]
+                "name", "unknown"
+            )
+            self.logger.info(
+                f"Configured JSON schema response format: {schema_name_log}"
+            )
         else:
+            # Dynamic response_format type from user input
             raise ValueError(
-                f"Invalid response_format type: {type(response_format)}. "
+                f"Invalid response_format type: {type(response_format)}. "  # pyright: ignore[reportUnknownArgumentType]
                 f"Must be a Pydantic BaseModel class or dict with json_schema structure."
             )
 
@@ -1075,9 +1197,23 @@ class LLMTask(BaseTask):
                     ),
                 }
 
-                # Add tool parameters if tools are still available
-                if self.supports_tools and self.tool_registry:
-                    continuation_params["tools"] = self.tool_registry.get_tool_schemas()
+                # Add tool parameters if tools are still available (Python and/or MCP)
+                has_python_tools = self.supports_tools and self.tool_registry
+                has_mcp_tools = len(self.mcp_tools) > 0
+
+                if has_python_tools or has_mcp_tools:
+                    # Build combined tools list for continuation
+                    combined_tools_continuation: List[Dict[str, Any]] = []
+
+                    if has_python_tools and self.tool_registry is not None:
+                        combined_tools_continuation.extend(
+                            self.tool_registry.get_tool_schemas()
+                        )
+
+                    if has_mcp_tools:
+                        combined_tools_continuation.extend(self.mcp_tools)
+
+                    continuation_params["tools"] = combined_tools_continuation
                     continuation_params["tool_choice"] = self.config.get(
                         "tool_choice", "auto"
                     )
@@ -1187,14 +1323,35 @@ class LLMTask(BaseTask):
             call_params["api_base"] = api_base
             self.logger.debug(f"Using custom API base: {api_base}")
 
-        # Add tool support if configured and supported
-        if (
+        # Add tool support if configured and supported (Python tools and/or MCP servers)
+        has_python_tools = (
             self.supports_tools
             and self.tool_registry
             and self._supports_function_calling()
-        ):
-            # LiteLLM directly accepts tools parameter
-            call_params["tools"] = self.tool_registry.get_tool_schemas()
+        )
+        has_mcp_tools = len(self.mcp_tools) > 0
+
+        if has_python_tools or has_mcp_tools:
+            # Build combined tools list
+            combined_tools: List[Dict[str, Any]] = []
+
+            # Add Python tool schemas from registry
+            if has_python_tools:
+                python_tool_schemas = self.tool_registry.get_tool_schemas()  # type: ignore
+                combined_tools.extend(python_tool_schemas)
+                self.logger.debug(
+                    f"Added {len(python_tool_schemas)} Python tools to LLM call"
+                )
+
+            # Add MCP server configurations as-is (LiteLLM handles them)
+            if has_mcp_tools:
+                combined_tools.extend(self.mcp_tools)
+                self.logger.debug(
+                    f"Added {len(self.mcp_tools)} MCP servers to LLM call"
+                )
+
+            # Pass combined tools to LiteLLM
+            call_params["tools"] = combined_tools
             call_params["tool_choice"] = self.config.get("tool_choice", "auto")
 
             # LiteLLM supports parallel_tool_calls parameter (but not for Ollama)
@@ -1202,7 +1359,7 @@ class LLMTask(BaseTask):
             if provider != "ollama" and self.config.get("parallel_tool_calls", False):
                 call_params["parallel_tool_calls"] = True
 
-            self.logger.debug(f"Added {len(call_params['tools'])} tools to LLM call")
+            self.logger.debug(f"Total tools configured: {len(combined_tools)}")
 
         # Add structured response format if configured
         if self.supports_response_format and self.response_format_config:

@@ -16,7 +16,14 @@
 # Requirements:
 #   - pytest must be installed
 #   - Run from workspace root directory
-#   - For integration tests: external services may be required (Ollama, etc.)
+#
+# Integration Tests:
+#   - Manual tests are excluded by default (use pytest -m manual to run them)
+#   - MCP tests: Marked as manual (require NGrok setup)
+#   - OpenAI tests: Require OPENAI_API_KEY environment variable
+#   - Ollama tests: Require Ollama service running on localhost:11434
+#   - Gmail tests: Require GOOGLE_CREDENTIALS_FILE environment variable
+#   - Tests automatically skip when requirements are not met
 
 set -e  # Exit on any error
 
@@ -120,6 +127,9 @@ PYTEST_ARGS=()
 if [[ "$VERBOSE" == true ]]; then
     PYTEST_ARGS+=("-v")
 fi
+
+# Exclude manual tests by default (require explicit marker to run them)
+PYTEST_ARGS+=("-m" "not manual")
 
 # Counters for summary
 total_packages=0

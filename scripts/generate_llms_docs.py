@@ -19,16 +19,16 @@ Requirements:
 
 Usage:
     # Generate for default packages (aipype, aipype-g)
-    python pyscripts/generate_llms_docs.py
+    python scripts/generate_llms_docs.py
 
     # Generate for specific package
-    python pyscripts/generate_llms_docs.py --packages aipype
+    python scripts/generate_llms_docs.py --packages aipype
 
     # Use different LLM model
-    python pyscripts/generate_llms_docs.py --llm-model gpt-4o-mini --llm-provider openai
+    python scripts/generate_llms_docs.py --llm-model gpt-4o-mini --llm-provider openai
 
     # Generate multiple packages
-    python pyscripts/generate_llms_docs.py --packages aipype,aipype-extras,aipype-g
+    python scripts/generate_llms_docs.py --packages aipype,aipype-extras,aipype-g
 
 Output:
     Files are created in docs/_build/ directory (3 files per package):
