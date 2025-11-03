@@ -1,0 +1,49 @@
+Python Performance Optimization Tips
+
+1. Use List Comprehensions
+   Instead of: result = []
+               for i in range(100):
+                   result.append(i * 2)
+
+   Use: result = [i * 2 for i in range(100)]
+
+2. Leverage Built-in Functions
+   Built-in functions like map(), filter(), and reduce() are implemented in C
+   and are generally faster than equivalent Python loops.
+
+3. Use Local Variables
+   Local variable lookup is faster than global variable lookup. Import frequently
+   used functions into local scope when working in loops.
+
+4. Profile Before Optimizing
+   Use cProfile or line_profiler to identify bottlenecks:
+   python -m cProfile -s cumtime script.py
+
+5. Use Generators for Large Datasets
+   Generators don't load everything into memory at once:
+   def large_range(n):
+       for i in range(n):
+           yield i
+
+6. Minimize Dot Notation
+   Cache frequently accessed object attributes:
+   local_method = obj.method
+   for i in range(1000):
+       local_method(i)  # Faster than obj.method(i)
+
+7. Use __slots__ for Classes
+   Reduce memory footprint and improve attribute access speed:
+   class Point:
+       __slots__ = ['x', 'y']
+
+8. Choose Right Data Structures
+   - list: Fast iteration, slow search
+   - dict: Fast lookup, more memory
+   - set: Fast membership testing
+   - deque: Fast append/pop from both ends
+
+9. Avoid Global Variables
+   They're slower to access and make code harder to test.
+
+10. Use NumPy for Numerical Operations
+    For array operations, NumPy is orders of magnitude faster than pure Python.

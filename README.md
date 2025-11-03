@@ -161,25 +161,18 @@ python scripts/check_types.py --summary                 # Show only summary
 
 ### Testing
 
-```bash
-# Quick scripts
-./scripts/run_tests.sh                   # Unit tests only (default)
-./scripts/run_tests.sh --all             # Unit + integration tests
-./scripts/run_tests.sh --integration     # Integration tests only
-./scripts/run_tests.sh --verbose         # Verbose output
-./scripts/run_tests.sh --help            # Show all options
+For comprehensive testing documentation, see **[README-TESTING.md](README-TESTING.md)**.
 
-# Manual testing commands
-uv run pytest packages/aipype/tests/ -v              # Unit tests for core
-uv run pytest packages/aipype/integration_tests/ -v  # Integration tests
-uv run pytest packages/aipype-extras/tests/ -v       # Test specific package
-uv run pytest -k "test_specific_function" -v           # Run specific tests
-```
-
-### Complete Development Workflow
+Quick commands:
 
 ```bash
-# Before committing changes, run all checks:
+# Run unit tests (default)
+./scripts/run_tests.sh
+
+# Run all tests (unit + integration, excludes manual tests)
+./scripts/run_tests.sh --all
+
+# Complete development workflow (before committing)
 ./scripts/run_ruff.sh && ./scripts/run_type_checks.sh && ./scripts/run_tests.sh --all
 ```
 
@@ -249,6 +242,8 @@ We welcome contributions! Please follow these guidelines to ensure code quality 
 - **Coverage**: Aim for high test coverage on new code
 - **Test Organization**: Place tests in appropriate `tests/` or `integration_tests/` directories
 
+For detailed testing guidelines and setup, see **[README-TESTING.md](README-TESTING.md)**.
+
 ### Pull Request Guidelines
 
 - **Clear Description**: Explain what your PR does and why
@@ -257,21 +252,15 @@ We welcome contributions! Please follow these guidelines to ensure code quality 
 - **Quality Checks**: Ensure all automated checks pass
 - **Examples**: Add examples for new features when appropriate
 
-## Google APIs Integration Tests
+## Integration Tests
 
-Integration tests for Google APIs (Gmail, Sheets) need OAuth2 authentication.
+For detailed information about running integration tests, including:
+- Google APIs (Gmail, Sheets) OAuth2 setup
+- MCP (Model Context Protocol) tests with NGrok
+- OpenAI, Anthropic, and Ollama test configuration
+- Manual tests requiring special setup
 
-### Prerequisites
-
-#### Google Cloud Console Setup
-1. Create project at [console.cloud.google.com](https://console.cloud.google.com/)
-2. Enable Gmail/Sheets APIs
-3. Configure OAuth consent screen (External type)
-4. Create OAuth client ID (Desktop application)
-5. Download credentials JSON and save as `google_credentials.json` in the project root dir
-
-#### First-Time Authentication
-Tests will open browser for OAuth2 consent and save tokens automatically.
+See **[README-TESTING.md](README-TESTING.md)** for complete documentation.
 
 ## Publishing Releases
 
