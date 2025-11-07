@@ -59,6 +59,7 @@ directory can be read, making it safe to expose over NGrok.
 """
 
 import os
+import sys
 from typing import List, override
 
 from aipype import BaseTask, LLMTask, PipelineAgent
@@ -288,6 +289,11 @@ def example_mcp_only() -> None:
     )
     result = agent.run()
 
+    # Exit immediately if agent fails (like tests do)
+    if not (result.is_success() or result.is_partial()):
+        print(f"\n✗ Analysis failed: {result.error_message}")
+        sys.exit(1)
+
     if result.is_success():
         print("\n✓ File analysis completed successfully")
 
@@ -312,8 +318,6 @@ def example_mcp_only() -> None:
                     print(f"  {status} {tool_name}")
         else:
             print("\n⚠️  No task result found in context")
-    else:
-        print(f"\n✗ Analysis failed: {result.error_message}")
 
 
 def example_mixed_tools() -> None:
@@ -324,6 +328,11 @@ def example_mixed_tools() -> None:
 
     agent = MixedToolsAgent("hybrid_analyzer", config={"filename": "python_tips.txt"})
     result = agent.run()
+
+    # Exit immediately if agent fails (like tests do)
+    if not (result.is_success() or result.is_partial()):
+        print(f"\n✗ Analysis failed: {result.error_message}")
+        sys.exit(1)
 
     if result.is_success():
         print("\n✓ Analysis with calculations completed successfully")
@@ -350,8 +359,6 @@ def example_mixed_tools() -> None:
                     print(f"  {status} {tool_type}: {tool_name}")
         else:
             print("\n⚠️  No task result found in context")
-    else:
-        print(f"\n✗ Analysis failed: {result.error_message}")
 
 
 def example_restricted_mcp_tools() -> None:
@@ -365,6 +372,11 @@ def example_restricted_mcp_tools() -> None:
         config={"file1": "sample_article.txt", "file2": "python_tips.txt"},
     )
     result = agent.run()
+
+    # Exit immediately if agent fails (like tests do)
+    if not (result.is_success() or result.is_partial()):
+        print(f"\n✗ Comparison failed: {result.error_message}")
+        sys.exit(1)
 
     if result.is_success():
         print("\n✓ Multi-file comparison completed successfully")
@@ -390,8 +402,6 @@ def example_restricted_mcp_tools() -> None:
                     print(f"  {status} {tool_name}")
         else:
             print("\n⚠️  No task result found in context")
-    else:
-        print(f"\n✗ Comparison failed: {result.error_message}")
 
 
 def main() -> None:
