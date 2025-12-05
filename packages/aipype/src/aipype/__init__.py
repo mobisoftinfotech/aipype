@@ -4,7 +4,10 @@ __version__ = "0.1.0a3"
 
 # Core framework exports
 from .pipeline_agent import PipelineAgent, TaskExecutionPlan
+from .declarative_agent import DeclarativePipelineAgent
 from .base_task import BaseTask
+from .decorators import task, Depends
+from .task_wrapper import TaskWrapper
 from .task_result import (
     TaskResult,
     TaskStatus,
@@ -83,8 +86,12 @@ from .utils.display import print_header, print_message_box
 __all__ = [
     # Core framework
     "PipelineAgent",
+    "DeclarativePipelineAgent",
     "TaskExecutionPlan",
     "BaseTask",
+    "task",
+    "Depends",
+    "TaskWrapper",
     "TaskResult",
     "TaskStatus",
     "wrap_legacy_result",
