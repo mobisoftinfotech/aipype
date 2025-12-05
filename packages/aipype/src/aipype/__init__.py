@@ -8,6 +8,7 @@ from .declarative_agent import DeclarativePipelineAgent
 from .base_task import BaseTask
 from .decorators import task, Depends
 from .task_wrapper import TaskWrapper
+from .helpers import llm, search, mcp_server, transform
 from .task_result import (
     TaskResult,
     TaskStatus,
@@ -92,6 +93,10 @@ __all__ = [
     "task",
     "Depends",
     "TaskWrapper",
+    "llm",
+    "search",
+    "mcp_server",
+    "transform",
     "TaskResult",
     "TaskStatus",
     "wrap_legacy_result",
