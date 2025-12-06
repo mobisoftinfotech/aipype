@@ -4,7 +4,8 @@ This module provides intuitive helper functions for creating LLM and search task
 within @task decorated methods. These helpers simplify the declarative syntax by
 providing sensible defaults and a cleaner interface.
 
-Example:
+Example::
+
     from aipype import PipelineAgent, task, llm, search
 
     class MyAgent(PipelineAgent):
@@ -63,7 +64,8 @@ def llm(
     Returns:
         Configured LLMTask ready for delegation
 
-    Example:
+    Example::
+
         @task
         def summarize(self, articles: list) -> str:
             return llm(
@@ -72,6 +74,8 @@ def llm(
                 temperature=0.3,
                 max_tokens=500
             )
+
+    Example with structured output and tools::
 
         @task
         def analyze(self, data: dict) -> AnalysisResult:
@@ -121,7 +125,8 @@ def search(
     Returns:
         Configured SearchTask ready for delegation
 
-    Example:
+    Example::
+
         @task
         def find_articles(self) -> dict:
             topic = self.config.get("topic", "AI")
@@ -158,7 +163,8 @@ def mcp_server(
     Returns:
         MCP configuration dict for use in tools parameter
 
-    Example:
+    Example::
+
         @task
         def research(self, topic: str) -> str:
             return llm(
@@ -205,7 +211,8 @@ def transform(
     Returns:
         Dict with transformed data under output_name and 'data' keys
 
-    Example:
+    Example::
+
         @task
         def extract_urls(self, search_results: dict) -> dict:
             results = search_results.get("results", [])

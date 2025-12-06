@@ -4,7 +4,8 @@ This module provides TaskWrapper, a BaseTask subclass that wraps
 decorated @task methods and enables them to work with the existing
 pipeline execution engine.
 
-Example:
+Example::
+
     # TaskWrapper is created automatically by PipelineAgent
     # You typically don't create it directly
 
@@ -50,7 +51,8 @@ class TaskWrapper(BaseTask):
         agent: Reference to the parent agent
         context_instance: TaskContext for dependency resolution
 
-    Example:
+    Example::
+
         class MyAgent(PipelineAgent):
             @task
             def fetch_data(self) -> dict:

@@ -3,7 +3,8 @@
 This module provides PipelineAgent, a subclass of BasePipelineAgent that
 automatically discovers @task decorated methods and builds the task list.
 
-Example:
+Example::
+
     from aipype import PipelineAgent, task, Depends
     from typing import Annotated
 
@@ -67,7 +68,8 @@ class PipelineAgent(BasePipelineAgent):
         - Error handling
         - Result collection
 
-    Example:
+    Example::
+
         class ArticleAgent(PipelineAgent):
             @task
             def search(self) -> dict:

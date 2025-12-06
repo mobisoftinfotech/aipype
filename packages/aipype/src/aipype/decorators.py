@@ -3,7 +3,8 @@
 This module provides the @task decorator and Depends class for defining
 pipeline tasks with automatic dependency inference.
 
-Example:
+Example::
+
     from aipype import PipelineAgent, task, Depends
     from typing import Annotated
 
@@ -45,7 +46,8 @@ def task(func: F) -> F:
     Returns:
         The decorated method with task metadata attached
 
-    Example:
+    Example::
+
         class MyAgent(PipelineAgent):
             @task
             def fetch_data(self) -> dict:
