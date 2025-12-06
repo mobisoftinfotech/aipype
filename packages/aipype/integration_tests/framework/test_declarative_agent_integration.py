@@ -1,4 +1,4 @@
-"""Integration tests for DeclarativePipelineAgent with @task decorators.
+"""Integration tests for PipelineAgent with @task decorators.
 
 These tests verify the declarative syntax works correctly in real execution
 scenarios. Integration tests use real components (NO MOCKS).
@@ -6,10 +6,9 @@ scenarios. Integration tests use real components (NO MOCKS).
 
 from typing import Annotated, Any, Dict, List
 
-import pytest
 
 from aipype import (
-    DeclarativePipelineAgent,
+    PipelineAgent,
     task,
     Depends,
     transform,
@@ -17,7 +16,7 @@ from aipype import (
 )
 
 
-class SimpleLinearAgent(DeclarativePipelineAgent):
+class SimpleLinearAgent(PipelineAgent):
     """Simple agent with linear task dependencies for testing."""
 
     @task
@@ -36,7 +35,7 @@ class SimpleLinearAgent(DeclarativePipelineAgent):
         return {"value": step_two["value"] + 10, "step": 3}
 
 
-class ParallelBranchAgent(DeclarativePipelineAgent):
+class ParallelBranchAgent(PipelineAgent):
     """Agent with parallel branches for testing execution phases."""
 
     @task
@@ -65,7 +64,7 @@ class ParallelBranchAgent(DeclarativePipelineAgent):
         }
 
 
-class ConfigAccessAgent(DeclarativePipelineAgent):
+class ConfigAccessAgent(PipelineAgent):
     """Agent demonstrating config access pattern."""
 
     @task
@@ -86,7 +85,7 @@ class ConfigAccessAgent(DeclarativePipelineAgent):
         }
 
 
-class ExplicitDependsAgent(DeclarativePipelineAgent):
+class ExplicitDependsAgent(PipelineAgent):
     """Agent demonstrating explicit Depends() for field extraction."""
 
     @task
@@ -115,7 +114,7 @@ class ExplicitDependsAgent(DeclarativePipelineAgent):
         return {"received_items": items, "count": len(items)}
 
 
-class TransformHelperAgent(DeclarativePipelineAgent):
+class TransformHelperAgent(PipelineAgent):
     """Agent demonstrating transform() helper usage."""
 
     @task
@@ -140,7 +139,7 @@ class TransformHelperAgent(DeclarativePipelineAgent):
         )
 
 
-class ValidationTaskAgent(DeclarativePipelineAgent):
+class ValidationTaskAgent(PipelineAgent):
     """Agent with validation task demonstrating error handling."""
 
     @task
@@ -336,7 +335,7 @@ class TestCircularDependencyDetection:
         """
 
         # Define class inside test to avoid polluting module scope
-        class CircularAgent(DeclarativePipelineAgent):
+        class CircularAgent(PipelineAgent):
             @task
             def task_a(
                 self, task_b: Annotated[Dict[str, Any], Depends("task_b.data")]
@@ -364,7 +363,7 @@ class TestTaskResultReturn:
     def test_task_result_passthrough(self) -> None:
         """Test TaskResult is passed through correctly."""
 
-        class TaskResultAgent(DeclarativePipelineAgent):
+        class TaskResultAgent(PipelineAgent):
             @task
             def returns_task_result(self) -> TaskResult:
                 return TaskResult.success(
@@ -393,7 +392,7 @@ class TestPydanticModelReturn:
             count: int
             items: List[str]
 
-        class PydanticAgent(DeclarativePipelineAgent):
+        class PydanticAgent(PipelineAgent):
             @task
             def returns_pydantic(self) -> OutputModel:
                 return OutputModel(
@@ -419,7 +418,7 @@ class TestPrimitiveReturns:
     def test_string_return(self) -> None:
         """Test string return is wrapped correctly."""
 
-        class StringAgent(DeclarativePipelineAgent):
+        class StringAgent(PipelineAgent):
             @task
             def returns_string(self) -> str:
                 return "hello world"
@@ -436,7 +435,7 @@ class TestPrimitiveReturns:
     def test_list_return(self) -> None:
         """Test list return is wrapped correctly."""
 
-        class ListAgent(DeclarativePipelineAgent):
+        class ListAgent(PipelineAgent):
             @task
             def returns_list(self) -> List[int]:
                 return [1, 2, 3, 4, 5]
@@ -457,7 +456,7 @@ class TestMultipleZeroDependencyTasks:
     def test_multiple_first_tasks(self) -> None:
         """Test multiple tasks with no dependencies all execute."""
 
-        class MultiFirstAgent(DeclarativePipelineAgent):
+        class MultiFirstAgent(PipelineAgent):
             @task
             def first_a(self) -> Dict[str, Any]:
                 return {"from": "a"}

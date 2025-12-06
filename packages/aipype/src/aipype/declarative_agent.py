@@ -1,13 +1,13 @@
 """Declarative pipeline agent with automatic task discovery.
 
-This module provides DeclarativePipelineAgent, a subclass of PipelineAgent that
+This module provides PipelineAgent, a subclass of BasePipelineAgent that
 automatically discovers @task decorated methods and builds the task list.
 
 Example:
-    from aipype import DeclarativePipelineAgent, task, Depends
+    from aipype import PipelineAgent, task, Depends
     from typing import Annotated
 
-    class MyAgent(DeclarativePipelineAgent):
+    class MyAgent(PipelineAgent):
         @task
         def fetch_data(self) -> dict:
             return {"data": "value"}
@@ -32,16 +32,16 @@ from typing import Any, Callable, Dict, List, Optional, Set, override
 
 from .base_task import BaseTask
 from .dependency_inference import infer_dependencies_from_signature
-from .pipeline_agent import PipelineAgent
+from .pipeline_agent import BasePipelineAgent
 from .task_dependencies import TaskDependency
 from .task_wrapper import TaskWrapper
 from .utils.common import setup_logger
 
 
-class DeclarativePipelineAgent(PipelineAgent):
-    """PipelineAgent that discovers tasks from @task decorated methods.
+class PipelineAgent(BasePipelineAgent):
+    """Declarative agent that discovers tasks from @task decorated methods.
 
-    DeclarativePipelineAgent provides a cleaner, more Pythonic way to define
+    PipelineAgent provides a cleaner, more Pythonic way to define
     AI pipelines. Instead of manually creating task objects and wiring
     dependencies, you simply define methods decorated with @task and let
     the framework infer the execution order from parameter names.
@@ -58,9 +58,9 @@ class DeclarativePipelineAgent(PipelineAgent):
         2. Analyzes method signatures to infer dependencies
         3. Topologically sorts methods by dependency order
         4. Creates TaskWrapper instances for each method
-        5. Returns task list to parent PipelineAgent for execution
+        5. Returns task list to parent BasePipelineAgent for execution
 
-    The parent PipelineAgent handles all execution concerns:
+    The parent BasePipelineAgent handles all execution concerns:
         - Building execution phases
         - Resolving dependencies
         - Parallel execution
@@ -68,7 +68,7 @@ class DeclarativePipelineAgent(PipelineAgent):
         - Result collection
 
     Example:
-        class ArticleAgent(DeclarativePipelineAgent):
+        class ArticleAgent(PipelineAgent):
             @task
             def search(self) -> dict:
                 # Access config directly for initial inputs
@@ -94,7 +94,7 @@ class DeclarativePipelineAgent(PipelineAgent):
     """
 
     def __init__(self, name: str, config: Optional[Dict[str, Any]] = None) -> None:
-        """Initialize the declarative pipeline agent.
+        """Initialize the pipeline agent.
 
         Args:
             name: Unique identifier for this agent
@@ -267,6 +267,6 @@ class DeclarativePipelineAgent(PipelineAgent):
         phases = self.execution_plan.total_phases() if self.execution_plan else 0
 
         return (
-            f"DeclarativePipelineAgent(name='{self.name}', tasks={len(self.tasks)}, "
+            f"PipelineAgent(name='{self.name}', tasks={len(self.tasks)}, "
             f"completed={completed}, failed={failed}, phases={phases})"
         )

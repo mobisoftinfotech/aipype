@@ -3,8 +3,8 @@
 __version__ = "0.1.0a3"
 
 # Core framework exports
-from .pipeline_agent import PipelineAgent, TaskExecutionPlan
-from .declarative_agent import DeclarativePipelineAgent
+from .pipeline_agent import BasePipelineAgent, TaskExecutionPlan
+from .declarative_agent import PipelineAgent
 from .base_task import BaseTask
 from .decorators import task, Depends
 from .task_wrapper import TaskWrapper
@@ -86,8 +86,8 @@ from .utils.display import print_header, print_message_box
 
 __all__ = [
     # Core framework
-    "PipelineAgent",
-    "DeclarativePipelineAgent",
+    "PipelineAgent",  # Primary agent class (declarative @task syntax)
+    "BasePipelineAgent",  # Base class for custom agents using setup_tasks()
     "TaskExecutionPlan",
     "BaseTask",
     "task",

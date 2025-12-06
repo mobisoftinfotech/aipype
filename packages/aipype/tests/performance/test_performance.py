@@ -9,7 +9,7 @@ from typing import Any, Dict, List, Optional
 from typing import override
 from unittest.mock import Mock, patch
 from aipype import (
-    PipelineAgent,
+    BasePipelineAgent,
     BaseTask,
     TaskContext,
     TaskResult,
@@ -237,13 +237,13 @@ class TestDependencyResolutionPerformance:
         )
 
 
-class TestPipelineAgentPerformance:
-    """Test PipelineAgent performance and scalability."""
+class TestBasePipelineAgentPerformance:
+    """Test BasePipelineAgent performance and scalability."""
 
     def test_parallel_execution_benefits(self) -> None:
         """Parallel task execution improves overall performance."""
 
-        class ParallelTestAgent(PipelineAgent):
+        class ParallelTestAgent(BasePipelineAgent):
             @override
             def setup_tasks(self) -> List[BaseTask]:
                 # Create 5 independent tasks that can run in parallel
@@ -404,7 +404,7 @@ class TestPipelineAgentPerformance:
     def test_large_scale_agent_performance(self) -> None:
         """Framework performance with large number of tasks."""
 
-        class LargeScaleAgent(PipelineAgent):
+        class LargeScaleAgent(BasePipelineAgent):
             @override
             def setup_tasks(self) -> List[BaseTask]:
                 tasks: List[BaseTask] = []
@@ -487,7 +487,7 @@ class TestPipelineAgentPerformance:
     def test_memory_usage_with_large_pipelines(self) -> None:
         """Memory usage remains reasonable with large pipelines."""
 
-        class MemoryTestAgent(PipelineAgent):
+        class MemoryTestAgent(BasePipelineAgent):
             @override
             def setup_tasks(self) -> List[BaseTask]:
                 # Create tasks that use significant memory

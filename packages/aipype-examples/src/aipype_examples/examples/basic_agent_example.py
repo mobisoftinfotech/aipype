@@ -4,7 +4,7 @@ import time
 from typing import List, Dict, Any, Optional, override
 
 from aipype import (
-    PipelineAgent,
+    BasePipelineAgent,
     BaseTask,
     TransformTask,
     ConditionalTask,
@@ -144,7 +144,7 @@ class CalculationTask(BaseTask):
             )
 
 
-class ExampleAgent(PipelineAgent):
+class ExampleAgent(BasePipelineAgent):
     """Example agent that demonstrates the modern pipeline system."""
 
     @override

@@ -9,7 +9,7 @@ an article outline. It highlights key `LLMTask` features from `aipype/llm_task.p
 - Prompt templating with `${variable}` placeholders via `prompt_template`
 - Optional `context` and `role` to steer the model
 - Safe result handling via `TaskResult` (includes `data["content"]`)
-- Easy orchestration via `PipelineAgent`
+- Easy orchestration via `BasePipelineAgent`
 
 Prerequisites:
 - Ensure Ollama is installed and running.
@@ -30,7 +30,7 @@ import os
 
 from typing import List, Optional
 from typing import override
-from aipype import PipelineAgent, BaseTask, LLMTask
+from aipype import BasePipelineAgent, BaseTask, LLMTask
 from aipype import print_header
 
 
@@ -47,7 +47,7 @@ Notes on `LLMTask` behavior (from `aipype/llm_task.py`):
 """
 
 
-class OutlineAgent(PipelineAgent):
+class OutlineAgent(BasePipelineAgent):
     """Agent that orchestrates a single `LLMTask` to create an article outline.
 
     - The agent reads `topic` from its `config` and passes it to the task.

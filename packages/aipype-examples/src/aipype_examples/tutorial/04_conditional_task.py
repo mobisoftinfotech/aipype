@@ -40,7 +40,7 @@ import os
 from typing import Any, Callable, List, Optional
 from typing import override
 from aipype import (
-    PipelineAgent,
+    BasePipelineAgent,
     BaseTask,
     LLMTask,
     ConditionalTask,
@@ -98,7 +98,7 @@ def quality_rejection_action() -> Callable[[], dict[str, Any]]:
     return action
 
 
-class QualityCheckerAgent(PipelineAgent):
+class QualityCheckerAgent(BasePipelineAgent):
     """Agent that generates content and checks it against quality criteria.
 
     Pipeline flow:

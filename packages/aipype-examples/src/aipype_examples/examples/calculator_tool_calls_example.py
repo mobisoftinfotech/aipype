@@ -16,7 +16,7 @@ Run with:
 import logging
 from typing import List, override
 
-from aipype import LLMTask, tool, PipelineAgent, BaseTask
+from aipype import LLMTask, tool, BasePipelineAgent, BaseTask
 from aipype import print_header
 
 
@@ -59,7 +59,7 @@ def calculate_average(numbers: List[float]) -> float:
     return result
 
 
-class CalculatorAgent(PipelineAgent):
+class CalculatorAgent(BasePipelineAgent):
     """Agent that demonstrates tool calling with calculator functions."""
 
     @override

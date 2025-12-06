@@ -25,10 +25,10 @@ This is a new project. So if you find the project useful, please give it a star 
 The recommended way to build agents in `aipype` is using the `@task` decorator for clean, Pythonic code:
 
 ```python
-from aipype import DeclarativePipelineAgent, task, llm, search, Depends
+from aipype import PipelineAgent, task, llm, search, Depends
 from typing import Annotated
 
-class ResearchAgent(DeclarativePipelineAgent):
+class ResearchAgent(PipelineAgent):
     """Agent that searches for articles and generates a summary."""
 
     @task
@@ -73,10 +73,10 @@ For backwards compatibility or complex scenarios, you can use the explicit task 
 
 ```python
 from typing import List
-from aipype import PipelineAgent, BaseTask, LLMTask
+from aipype import BasePipelineAgent, BaseTask, LLMTask
 
 
-class OutlineAgent(PipelineAgent):
+class OutlineAgent(BasePipelineAgent):
     """Agent that creates an article outline using legacy syntax."""
 
     def setup_tasks(self) -> List[BaseTask]:

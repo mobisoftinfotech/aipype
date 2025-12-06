@@ -30,7 +30,7 @@ import sys
 from typing import Any, Dict, List
 
 from aipype import (
-    DeclarativePipelineAgent,
+    PipelineAgent,
     task,
     print_header,
     print_message_box,
@@ -38,7 +38,7 @@ from aipype import (
 from aipype_g import GoogleOAuthTask, GmailListEmailsTask
 
 
-class GmailTestAgentDeclarative(DeclarativePipelineAgent):
+class GmailTestAgentDeclarative(PipelineAgent):
     """Declarative Gmail test agent using @task decorators.
 
     This agent showcases the simplified declarative syntax where:

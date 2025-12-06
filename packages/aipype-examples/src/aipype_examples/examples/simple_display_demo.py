@@ -15,7 +15,7 @@ Usage examples:
 from typing import List, override
 
 from aipype import (
-    PipelineAgent,
+    BasePipelineAgent,
     BaseTask,
     LLMTask,
     SearchTask,
@@ -25,7 +25,7 @@ from aipype import (
 )
 
 
-class SimpleDisplayDemo(PipelineAgent):
+class SimpleDisplayDemo(BasePipelineAgent):
     """Demo agent showing simple display_results usage."""
 
     @override

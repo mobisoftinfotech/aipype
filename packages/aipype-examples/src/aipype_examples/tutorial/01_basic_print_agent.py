@@ -7,7 +7,7 @@ This minimal example demonstrates core framework concepts from the local
 
 - BaseTask: the unit of work. You subclass it and implement `run()` to perform
   side effects and return a `TaskResult` (success/failure with structured data).
-- PipelineAgent: orchestrates a pipeline (ordered list) of tasks. You subclass
+- BasePipelineAgent: orchestrates a pipeline (ordered list) of tasks. You subclass
   it and implement `setup_tasks()` to declare which tasks should run.
 - TaskResult: a typed container for outcomes, making task outputs consistent
   and easy to pass to downstream tasks.
@@ -18,7 +18,7 @@ It also shows how configuration flows from an agent into its tasks via the
 
 from typing import List
 from typing import override
-from aipype import PipelineAgent, BaseTask, TaskResult
+from aipype import BasePipelineAgent, BaseTask, TaskResult
 from aipype import print_header
 
 
@@ -47,11 +47,11 @@ class PrintMessageTask(BaseTask):
         return TaskResult.success(data={"message": message})
 
 
-class BasicAgent(PipelineAgent):
+class BasicAgent(BasePipelineAgent):
     """An agent that orchestrates one or more tasks as a pipeline.
 
     Key framework concepts:
-    - Inherit from `PipelineAgent` to manage task orchestration and lifecycle.
+    - Inherit from `BasePipelineAgent` to manage task orchestration and lifecycle.
     - Implement `setup_tasks()` to declare an ordered list of tasks.
     - Agent-level `config` can be used to parameterize tasks.
     """

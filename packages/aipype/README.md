@@ -13,9 +13,9 @@ pip install aipype
 Use the `@task` decorator for clean, Pythonic agent definitions:
 
 ```python
-from aipype import DeclarativePipelineAgent, task, llm, search
+from aipype import PipelineAgent, task, llm, search
 
-class ResearchAgent(DeclarativePipelineAgent):
+class ResearchAgent(PipelineAgent):
 
     @task
     def find_sources(self) -> dict:

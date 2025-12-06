@@ -5,9 +5,9 @@ within @task decorated methods. These helpers simplify the declarative syntax by
 providing sensible defaults and a cleaner interface.
 
 Example:
-    from aipype import DeclarativePipelineAgent, task, llm, search
+    from aipype import PipelineAgent, task, llm, search
 
-    class MyAgent(DeclarativePipelineAgent):
+    class MyAgent(PipelineAgent):
         @task
         def find_articles(self) -> dict:
             return search(self.config["topic"], max_results=10)

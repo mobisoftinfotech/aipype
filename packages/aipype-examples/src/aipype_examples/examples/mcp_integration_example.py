@@ -62,7 +62,7 @@ import os
 import sys
 from typing import List, override
 
-from aipype import BaseTask, LLMTask, PipelineAgent
+from aipype import BaseTask, LLMTask, BasePipelineAgent
 from aipype.tools import tool
 
 
@@ -85,7 +85,7 @@ def calculate(expression: str) -> float:
         return float(0)
 
 
-class MCPOnlyAgent(PipelineAgent):
+class MCPOnlyAgent(BasePipelineAgent):
     """Agent that uses only MCP servers for tool access.
 
     This agent uses the FileReader MCP server to read file contents
@@ -147,7 +147,7 @@ class MCPOnlyAgent(PipelineAgent):
         ]
 
 
-class MixedToolsAgent(PipelineAgent):
+class MixedToolsAgent(BasePipelineAgent):
     """Agent that uses both Python tools and MCP servers.
 
     Combines local Python calculation tool with MCP file reader.
@@ -209,7 +209,7 @@ class MixedToolsAgent(PipelineAgent):
         ]
 
 
-class RestrictedMCPToolsAgent(PipelineAgent):
+class RestrictedMCPToolsAgent(BasePipelineAgent):
     """Agent that demonstrates MCP tool restrictions with allowed_tools.
 
     Shows how to restrict which MCP tools are available to the LLM

@@ -34,7 +34,7 @@ F = TypeVar("F", bound=Callable[..., Any])
 def task(func: F) -> F:
     """Mark a method as a pipeline task with automatic dependency inference.
 
-    The @task decorator marks methods in a DeclarativePipelineAgent as pipeline
+    The @task decorator marks methods in a PipelineAgent as pipeline
     tasks. Dependencies are automatically inferred from the method's parameter
     names - if a parameter name matches another task's name, it becomes a
     dependency.

@@ -24,7 +24,7 @@ Configuration Options:
 from typing import Annotated, Any, Dict, List
 
 from aipype import (
-    DeclarativePipelineAgent,
+    PipelineAgent,
     task,
     Depends,
     llm,
@@ -37,7 +37,7 @@ from aipype import (
 )
 
 
-class ArticleWriterAgentDeclarative(DeclarativePipelineAgent):
+class ArticleWriterAgentDeclarative(PipelineAgent):
     """Declarative Article Writer Agent using @task decorators.
 
     This agent showcases the simplified declarative syntax where:

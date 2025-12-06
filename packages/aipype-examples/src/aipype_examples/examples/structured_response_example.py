@@ -14,7 +14,7 @@ from typing import List, override
 from pydantic import BaseModel, Field
 
 from aipype import (
-    PipelineAgent,
+    BasePipelineAgent,
     LLMTask,
     BaseTask,
     TransformTask,
@@ -35,7 +35,7 @@ class CompanyInfo(BaseModel):
     key_products: List[str] = Field(description="Main products or services")
 
 
-class DataExtractionAgent(PipelineAgent):
+class DataExtractionAgent(BasePipelineAgent):
     """Agent that extracts structured data from unstructured text."""
 
     @override

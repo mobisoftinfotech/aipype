@@ -8,11 +8,11 @@ where the LLM can automatically search the web and get content from results.
 import os
 from typing import Any, Dict, List, override
 
-from aipype import LLMTask, search_with_content, PipelineAgent, BaseTask
+from aipype import LLMTask, search_with_content, BasePipelineAgent, BaseTask
 from aipype import print_header, print_message_box
 
 
-class SearchExampleAgent(PipelineAgent):
+class SearchExampleAgent(BasePipelineAgent):
     """Agent that demonstrates LLM tool calling with search functionality."""
 
     @override

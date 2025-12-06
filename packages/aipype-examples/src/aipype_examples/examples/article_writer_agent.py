@@ -1,7 +1,7 @@
 from typing import List, Dict, Any, override
 
 from aipype import (
-    PipelineAgent,
+    BasePipelineAgent,
     BaseTask,
     SearchTask,
     LLMTask,
@@ -16,7 +16,7 @@ from aipype import (
 )
 
 
-class ArticleWriterAgent(PipelineAgent):
+class ArticleWriterAgent(BasePipelineAgent):
     """ArticleWriterAgent
 
     This agent creates high-quality articles by:
@@ -35,7 +35,7 @@ class ArticleWriterAgent(PipelineAgent):
         - summarization_temperature: LLM temperature for summarization (default: 0.3)
         - summarization_max_tokens: Maximum tokens for summarization (default: 300)
 
-    All orchestration is handled automatically by PipelineAgent based on task dependencies.
+    All orchestration is handled automatically by BasePipelineAgent based on task dependencies.
     The agent will fail with an error if fewer than 3 successful articles are downloaded.
     """
 

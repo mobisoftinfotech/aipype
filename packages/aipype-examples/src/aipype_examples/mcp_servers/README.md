@@ -62,9 +62,9 @@ Press Ctrl+C to stop the server
 ### Basic Usage
 
 ```python
-from aipype import LLMTask, PipelineAgent
+from aipype import LLMTask, BasePipelineAgent
 
-class FileReaderAgent(PipelineAgent):
+class FileReaderAgent(BasePipelineAgent):
     def setup_tasks(self):
         return [
             LLMTask("analyze", {

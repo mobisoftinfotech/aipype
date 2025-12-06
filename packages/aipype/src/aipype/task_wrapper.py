@@ -5,7 +5,7 @@ decorated @task methods and enables them to work with the existing
 pipeline execution engine.
 
 Example:
-    # TaskWrapper is created automatically by DeclarativePipelineAgent
+    # TaskWrapper is created automatically by PipelineAgent
     # You typically don't create it directly
 
     wrapper = TaskWrapper(
@@ -51,7 +51,7 @@ class TaskWrapper(BaseTask):
         context_instance: TaskContext for dependency resolution
 
     Example:
-        class MyAgent(DeclarativePipelineAgent):
+        class MyAgent(PipelineAgent):
             @task
             def fetch_data(self) -> dict:
                 return {"data": "value"}
@@ -68,7 +68,7 @@ class TaskWrapper(BaseTask):
         self,
         name: str,
         method: Callable[..., Any],
-        agent: Any,  # DeclarativePipelineAgent, but avoid circular import
+        agent: Any,  # PipelineAgent, but avoid circular import
         dependencies: List["TaskDependency"],
     ) -> None:
         """Initialize a task wrapper.

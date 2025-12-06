@@ -1,10 +1,10 @@
-"""Integration tests for DeclarativePipelineAgent."""
+"""Integration tests for PipelineAgent (declarative syntax)."""
 
 from typing import Annotated, Any, Dict, List
 
 from pydantic import BaseModel
 
-from aipype import DeclarativePipelineAgent, task, Depends
+from aipype import PipelineAgent, task, Depends
 
 
 class TestSimpleLinearPipeline:
@@ -13,7 +13,7 @@ class TestSimpleLinearPipeline:
     def test_linear_pipeline_execution(self) -> None:
         """Test a simple linear pipeline with 3 tasks."""
 
-        class SimpleAgent(DeclarativePipelineAgent):
+        class SimpleAgent(PipelineAgent):
             @task
             def step_one(self) -> Dict[str, Any]:
                 return {"value": 1}
@@ -40,7 +40,7 @@ class TestSimpleLinearPipeline:
     def test_task_receives_correct_data(self) -> None:
         """Test that tasks receive the correct data from dependencies."""
 
-        class DataAgent(DeclarativePipelineAgent):
+        class DataAgent(PipelineAgent):
             @task
             def producer(self) -> Dict[str, Any]:
                 return {"message": "hello", "count": 42}
@@ -69,7 +69,7 @@ class TestParallelBranches:
     def test_parallel_branches_execution(self) -> None:
         """Test pipeline with parallel branches."""
 
-        class ParallelAgent(DeclarativePipelineAgent):
+        class ParallelAgent(PipelineAgent):
             @task
             def source(self) -> Dict[str, Any]:
                 return {"data": "source"}
@@ -106,7 +106,7 @@ class TestParallelBranches:
     def test_multiple_zero_dependency_tasks(self) -> None:
         """Test pipeline with multiple tasks that have no dependencies."""
 
-        class MultiSourceAgent(DeclarativePipelineAgent):
+        class MultiSourceAgent(PipelineAgent):
             @task
             def source_a(self) -> Dict[str, Any]:
                 return {"source": "a"}
@@ -147,7 +147,7 @@ class TestCircularDependencyDetection:
         and logs a warning, leaving the agent with no tasks.
         """
 
-        class CircularAgent(DeclarativePipelineAgent):
+        class CircularAgent(PipelineAgent):
             @task
             def task_a(self, task_b: Dict[str, Any]) -> Dict[str, Any]:
                 return {}
@@ -163,7 +163,7 @@ class TestCircularDependencyDetection:
     def test_three_way_circular_dependency_results_in_no_tasks(self) -> None:
         """Test detection of circular dependencies with 3 tasks."""
 
-        class ThreeWayCircularAgent(DeclarativePipelineAgent):
+        class ThreeWayCircularAgent(PipelineAgent):
             @task
             def task_a(self, task_c: Dict[str, Any]) -> Dict[str, Any]:
                 return {}
@@ -187,7 +187,7 @@ class TestConfigAccess:
     def test_config_access_in_task(self) -> None:
         """Test that tasks can access self.config."""
 
-        class ConfigAgent(DeclarativePipelineAgent):
+        class ConfigAgent(PipelineAgent):
             @task
             def fetch(self) -> Dict[str, Any]:
                 topic = self.config["topic"]
@@ -207,7 +207,7 @@ class TestConfigAccess:
     def test_config_access_with_dependency(self) -> None:
         """Test that tasks can access both config and dependencies."""
 
-        class MixedAgent(DeclarativePipelineAgent):
+        class MixedAgent(PipelineAgent):
             @task
             def fetch(self) -> Dict[str, Any]:
                 return {"data": "fetched"}
@@ -233,7 +233,7 @@ class TestExplicitDependsPath:
     def test_explicit_depends_path(self) -> None:
         """Test using Annotated[T, Depends()] for explicit paths."""
 
-        class ExplicitDepsAgent(DeclarativePipelineAgent):
+        class ExplicitDepsAgent(PipelineAgent):
             @task
             def search(self) -> Dict[str, Any]:
                 return {"content": "article text", "url": "http://example.com"}
@@ -256,7 +256,7 @@ class TestExplicitDependsPath:
     def test_mixed_implicit_and_explicit_deps(self) -> None:
         """Test mixing implicit parameter names and explicit Depends()."""
 
-        class MixedDepsAgent(DeclarativePipelineAgent):
+        class MixedDepsAgent(PipelineAgent):
             @task
             def task_a(self) -> Dict[str, Any]:
                 return {"value": 10}
@@ -289,7 +289,7 @@ class TestReturnTypes:
     def test_dict_return(self) -> None:
         """Test task returning dict."""
 
-        class DictAgent(DeclarativePipelineAgent):
+        class DictAgent(PipelineAgent):
             @task
             def produce(self) -> Dict[str, Any]:
                 return {"key": "value", "count": 42}
@@ -310,7 +310,7 @@ class TestReturnTypes:
     def test_string_return(self) -> None:
         """Test task returning string."""
 
-        class StringAgent(DeclarativePipelineAgent):
+        class StringAgent(PipelineAgent):
             @task
             def produce(self) -> str:
                 return "hello world"
@@ -328,7 +328,7 @@ class TestReturnTypes:
     def test_list_return(self) -> None:
         """Test task returning list."""
 
-        class ListAgent(DeclarativePipelineAgent):
+        class ListAgent(PipelineAgent):
             @task
             def produce(self) -> List[int]:
                 return [1, 2, 3]
@@ -349,7 +349,7 @@ class TestReturnTypes:
             value: int
             items: List[str]
 
-        class PydanticAgent(DeclarativePipelineAgent):
+        class PydanticAgent(PipelineAgent):
             @task
             def produce(self) -> OutputModel:
                 return OutputModel(value=10, items=["a", "b"])
@@ -374,7 +374,7 @@ class TestNoTasksAgent:
     def test_no_tasks_warning(self) -> None:
         """Test that agent with no @task methods logs warning."""
 
-        class EmptyAgent(DeclarativePipelineAgent):
+        class EmptyAgent(PipelineAgent):
             pass
 
         agent = EmptyAgent("test", {})
@@ -387,7 +387,7 @@ class TestAgentStr:
     def test_str_representation(self) -> None:
         """Test __str__ method."""
 
-        class SimpleAgent(DeclarativePipelineAgent):
+        class SimpleAgent(PipelineAgent):
             @task
             def task_one(self) -> Dict[str, Any]:
                 return {"value": 1}
@@ -395,7 +395,7 @@ class TestAgentStr:
         agent = SimpleAgent("my_agent", {})
         result = str(agent)
 
-        assert "DeclarativePipelineAgent" in result
+        assert "PipelineAgent" in result
         assert "my_agent" in result
         assert "tasks=1" in result
 
@@ -406,7 +406,7 @@ class TestErrorHandling:
     def test_task_exception_captured(self) -> None:
         """Test that exceptions in tasks are captured as failures."""
 
-        class FailingAgent(DeclarativePipelineAgent):
+        class FailingAgent(PipelineAgent):
             @task
             def failing_task(self) -> Dict[str, Any]:
                 raise ValueError("Something went wrong")
@@ -421,7 +421,7 @@ class TestErrorHandling:
     def test_dependency_failure_propagation(self) -> None:
         """Test that dependent tasks don't run if dependency fails."""
 
-        class DependencyFailAgent(DeclarativePipelineAgent):
+        class DependencyFailAgent(PipelineAgent):
             @task
             def failing_task(self) -> Dict[str, Any]:
                 raise ValueError("Fail")
@@ -446,7 +446,7 @@ class TestTaskDiscovery:
     def test_private_methods_not_discovered(self) -> None:
         """Test that private methods are not discovered as tasks."""
 
-        class PrivateAgent(DeclarativePipelineAgent):
+        class PrivateAgent(PipelineAgent):
             @task
             def public_task(self) -> Dict[str, Any]:
                 return {"public": True}
@@ -464,7 +464,7 @@ class TestTaskDiscovery:
     def test_non_task_methods_not_discovered(self) -> None:
         """Test that regular methods are not discovered as tasks."""
 
-        class MixedAgent(DeclarativePipelineAgent):
+        class MixedAgent(PipelineAgent):
             @task
             def task_method(self) -> Dict[str, Any]:
                 return {"task": True}

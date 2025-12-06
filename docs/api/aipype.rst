@@ -16,8 +16,8 @@ Declarative Syntax (Recommended)
 
 The declarative syntax provides a clean, Pythonic way to define AI agent pipelines using ``@task`` decorators and helper functions.
 
-Declarative Pipeline Agent
---------------------------
+PipelineAgent (Declarative Syntax)
+----------------------------------
 
 .. automodule:: aipype.declarative_agent
    :members:
@@ -56,8 +56,8 @@ Dependency Inference
    :undoc-members:
    :show-inheritance:
 
-Legacy Pipeline Agent
-=====================
+BasePipelineAgent (Legacy Syntax)
+=================================
 
 .. automodule:: aipype.pipeline_agent
    :members:

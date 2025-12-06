@@ -1,4 +1,4 @@
-"""Tests for PipelineAgent - automatic task orchestration based on dependencies."""
+"""Tests for BasePipelineAgent - automatic task orchestration based on dependencies."""
 
 import pytest
 import time
@@ -7,7 +7,7 @@ from unittest.mock import Mock, patch
 
 from typing import override
 from aipype import (
-    PipelineAgent,
+    BasePipelineAgent,
     TaskExecutionPlan,
     BaseTask,
     TaskDependency,
@@ -54,10 +54,10 @@ class MockTask(BaseTask):
 
 def create_test_pipeline_agent(
     name: str, tasks: List[BaseTask], config: Optional[Dict[str, Any]] = None
-) -> PipelineAgent:
-    """Helper function to create a concrete PipelineAgent for testing."""
+) -> BasePipelineAgent:
+    """Helper function to create a concrete BasePipelineAgent for testing."""
 
-    class TestPipelineAgent(PipelineAgent):
+    class TestPipelineAgent(BasePipelineAgent):
         @override
         def setup_tasks(self) -> List[BaseTask]:
             return tasks
@@ -65,11 +65,11 @@ def create_test_pipeline_agent(
     return TestPipelineAgent(name, config or {})
 
 
-class TestPipelineAgent:
-    """Test suite for PipelineAgent functionality."""
+class TestBasePipelineAgent:
+    """Test suite for BasePipelineAgent functionality."""
 
     def test_agent_executes_tasks_automatically(self) -> None:
-        """PipelineAgent runs tasks without custom run() method."""
+        """BasePipelineAgent runs tasks without custom run() method."""
         # Create simple tasks without dependencies
         task1 = MockTask("task1", {"value": 1})
         task2 = MockTask("task2", {"value": 2})

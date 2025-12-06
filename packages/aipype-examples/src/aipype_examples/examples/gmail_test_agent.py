@@ -39,7 +39,7 @@ import sys
 from typing import Dict, Any, List, Optional, cast, override
 
 from aipype import (
-    PipelineAgent,
+    BasePipelineAgent,
     BaseTask,
     TaskDependency,
     DependencyType,
@@ -249,7 +249,7 @@ class GmailTestReportTask(BaseTask):
         )
 
 
-class GmailTestAgent(PipelineAgent):
+class GmailTestAgent(BasePipelineAgent):
     """Modern Gmail test agent demonstrating unified Google authentication.
 
     This agent showcases the MI-Agents framework's unified Google authentication

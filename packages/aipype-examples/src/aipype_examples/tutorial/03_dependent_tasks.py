@@ -7,7 +7,7 @@ dependency system. We extend the outline example by adding a second LLM task
 that uses the outline to write a short article.
 
 Key concepts demonstrated:
-- Two `LLMTask` instances orchestrated by a `PipelineAgent`
+- Two `LLMTask` instances orchestrated by a `BasePipelineAgent`
 - `TaskDependency` wires output of one task into the config of another
 - Prompt templating with `${variable}` placeholders
 - Displaying both intermediate (outline) and final (article) results
@@ -22,7 +22,7 @@ import os
 from typing import List, Optional
 from typing import override
 from aipype import (
-    PipelineAgent,
+    BasePipelineAgent,
     BaseTask,
     LLMTask,
     TaskDependency,
@@ -34,7 +34,7 @@ from aipype import print_header
 DEFAULT_TOPIC = "AI agent frameworks"
 
 
-class OutlineToArticleAgent(PipelineAgent):
+class OutlineToArticleAgent(BasePipelineAgent):
     """Agent with two dependent LLM tasks: outline → article.
 
     - Task 1 (`outline_article`): Generates a markdown outline

@@ -3,7 +3,7 @@
 from typing import Any, Dict, List, override
 
 from aipype import (
-    PipelineAgent,
+    BasePipelineAgent,
     LLMTask,
     BaseTask,
     TransformTask,
@@ -13,7 +13,7 @@ from aipype import (
 from aipype import print_header, print_message_box
 
 
-class LLMAgent(PipelineAgent):
+class LLMAgent(BasePipelineAgent):
     """Example agent that demonstrates modern LLM task capabilities with pipeline architecture."""
 
     @override

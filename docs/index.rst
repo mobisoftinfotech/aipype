@@ -37,10 +37,10 @@ Create agents using the ``@task`` decorator for clean, Pythonic code:
 
 .. code-block:: python
 
-   from aipype import DeclarativePipelineAgent, task, llm, search, Depends
+   from aipype import PipelineAgent, task, llm, search, Depends
    from typing import Annotated
 
-   class ResearchAgent(DeclarativePipelineAgent):
+   class ResearchAgent(PipelineAgent):
 
        @task
        def find_sources(self) -> dict:
@@ -84,9 +84,9 @@ For backwards compatibility or complex scenarios:
 
 .. code-block:: python
 
-   from aipype import PipelineAgent, LLMTask, SearchTask, TaskDependency, DependencyType
+   from aipype import BasePipelineAgent, LLMTask, SearchTask, TaskDependency, DependencyType
 
-   class ArticleWriterAgent(PipelineAgent):
+   class ArticleWriterAgent(BasePipelineAgent):
        def setup_tasks(self):
            return [
                SearchTask("search", {"query": "${topic}", "max_results": 5},
