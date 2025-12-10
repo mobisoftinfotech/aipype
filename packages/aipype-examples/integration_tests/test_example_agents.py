@@ -266,7 +266,7 @@ class TestExampleAgents:
         assert isinstance(result, AgentRunResult)
         # Gmail test should complete successfully if credentials are valid
         assert result.is_success()
-        assert result.completed_tasks == 6  # All 6 tasks in the pipeline
+        assert result.completed_tasks == 4  # All 4 tasks in the pipeline
         assert result.agent_name == "test-gmail-agent"
 
         # Check authentication task

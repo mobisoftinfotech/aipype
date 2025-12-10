@@ -20,7 +20,7 @@ Example::
 """
 
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Callable, List, Optional, override
+from typing import TYPE_CHECKING, Any, Callable, List, Optional, cast, override
 
 from pydantic import BaseModel
 
@@ -248,9 +248,32 @@ class TaskWrapper(BaseTask):
 
         # Add wrapper overhead to execution time
         total_time = (datetime.now() - start_time).total_seconds()
-        delegated_result.execution_time = total_time
 
-        # Add delegation info to metadata
+        # Wrap result data with 'data' key for consistent path access (like dict returns)
+        # This ensures task_name.data path works for delegated BaseTask results
+        if delegated_result.is_success() and isinstance(delegated_result.data, dict):
+            # Cast to dict[str, Any] - isinstance confirms dict, but pyright narrows
+            # to dict[Unknown, Unknown] since TaskResult.data is typed as Any
+            result_data = cast(
+                dict[str, Any],
+                delegated_result.data,  # pyright: ignore[reportUnknownMemberType]
+            )
+            wrapped_data: dict[str, Any] = {
+                **result_data,
+                "data": result_data,
+            }
+            return TaskResult.success(
+                data=wrapped_data,
+                execution_time=total_time,
+                metadata={
+                    **delegated_result.metadata,
+                    "delegated_from": self.name,
+                    "delegated_to": delegated_task.name,
+                },
+            )
+
+        # For non-dict or non-success results, return as-is with updated time
+        delegated_result.execution_time = total_time
         delegated_result.add_metadata("delegated_from", self.name)
         delegated_result.add_metadata("delegated_to", delegated_task.name)
 
