@@ -1,289 +1,110 @@
-"""Example LLM agent demonstrating modern pipeline architecture with ContextualLLMTask."""
+"""Example LLM agent demonstrating modern pipeline architecture with @task decorators."""
 
-from typing import Any, Dict, List, override
+from typing import Annotated, Any, Dict
 
 from aipype import (
     PipelineAgent,
+    task,
+    llm,
+    Depends,
     LLMTask,
-    BaseTask,
-    TransformTask,
-    TaskDependency,
-    DependencyType,
 )
 from aipype import print_header, print_message_box
 
 
 class LLMAgent(PipelineAgent):
-    """Example agent that demonstrates modern LLM task capabilities with pipeline architecture."""
+    """Example agent demonstrating LLM capabilities with declarative @task syntax.
 
-    @override
-    def setup_tasks(self) -> List[BaseTask]:
-        """Set up various LLM tasks to demonstrate modern contextual capabilities."""
+    This agent shows:
+    - Multiple LLM tasks with automatic dependency inference
+    - Using llm() helper for clean task creation
+    - Task chaining with Depends() for explicit field extraction
+    - Synthesis task that combines results from multiple tasks
+    """
 
-        # Get configuration from agent config
-        default_provider = self.config.get("default_provider", "openai")
-        default_model = self.config.get("default_model", "gpt-4.1-nano")
+    @task
+    def question_answer(self) -> LLMTask:
+        """Answer a question using LLM."""
+        question = self.config.get("question", "What is artificial intelligence?")
+        provider = self.config.get("default_provider", "openai")
+        model = self.config.get("default_model", "gpt-4o-mini")
 
-        # Create and return all tasks
-        tasks: List[BaseTask] = [
-            self._create_context_setup_task(),
-            self._create_qa_task(default_provider, default_model),
-        ]
-
-        # Add optional tasks based on configuration
-        if self.config.get("content_to_summarize"):
-            tasks.append(self._create_summarize_task(default_provider, default_model))
-
-        tasks.append(
-            self._create_creative_writing_task(default_provider, default_model)
+        return llm(
+            prompt=f"Please answer this question: {question}",
+            model=model,
+            provider=provider,
+            system="You are a helpful assistant that answers questions clearly and concisely.",
+            temperature=0.7,
+            max_tokens=200,
         )
 
-        if self.config.get("data_to_analyze") or self.config.get("analysis_provider"):
-            tasks.append(
-                self._create_data_analysis_task(default_provider, default_model)
-            )
+    @task
+    def summarize_content(self) -> LLMTask:
+        """Summarize the provided content."""
+        content = self.config.get(
+            "content_to_summarize",
+            "Artificial intelligence (AI) is a branch of computer science that aims to create intelligent machines.",
+        )
+        provider = self.config.get("default_provider", "openai")
+        model = self.config.get("default_model", "gpt-4o-mini")
 
-        if self.config.get("code_to_explain"):
-            tasks.append(
-                self._create_code_explanation_task(default_provider, default_model)
-            )
-
-        # Add synthesis task if multiple tasks are present
-        if len(tasks) > 3:  # More than just setup, qa, and creative
-            tasks.append(self._create_synthesis_task(default_provider, default_model))
-
-        return tasks
-
-    def _create_context_setup_task(self) -> TransformTask:
-        """Create the initial context setup task.
-
-        Returns:
-            Configured TransformTask for setting up user inputs
-        """
-        return TransformTask(
-            "setup_context",
-            {
-                "transform_function": lambda _: {  # pyright: ignore
-                    "user_question": self.config.get(
-                        "question", "What is artificial intelligence?"
-                    ),
-                    "content_to_summarize": self.config.get(
-                        "content_to_summarize",
-                        "Artificial intelligence (AI) is a branch of computer science that aims to create intelligent machines that can think and learn like humans. It encompasses various subfields including machine learning, natural language processing, computer vision, and robotics. AI has applications in many industries including healthcare, finance, transportation, and entertainment.",
-                    ),
-                    "story_topic": self.config.get(
-                        "story_topic", "a robot learning to paint"
-                    ),
-                    "data_to_analyze": self.config.get(
-                        "data_to_analyze",
-                        "Sales data: Q1: $100k, Q2: $150k, Q3: $120k, Q4: $180k",
-                    ),
-                    "code_to_explain": self.config.get(
-                        "code_to_explain",
-                        "def fibonacci(n): return n if n <= 1 else fibonacci(n-1) + fibonacci(n-2)",
-                    ),
-                },
-                "output_name": "user_inputs",
-                "validate_input": False,  # No input validation needed for static data generator
-            },
+        return llm(
+            prompt=f"Please summarize the following text in 2-3 sentences: {content}",
+            model=model,
+            provider=provider,
+            system="You are an expert at summarizing content.",
+            temperature=0.3,
+            max_tokens=150,
         )
 
-    def _create_qa_task(self, default_provider: str, default_model: str) -> LLMTask:
-        """Create the Q&A task.
+    @task
+    def creative_writing(self) -> LLMTask:
+        """Write a creative short story."""
+        topic = self.config.get("story_topic", "a robot learning to paint")
+        provider = self.config.get("default_provider", "openai")
+        model = self.config.get("default_model", "gpt-4o-mini")
 
-        Args:
-            default_provider: Default LLM provider to use
-            default_model: Default LLM model to use
-
-        Returns:
-            Configured LLMTask for question answering
-        """
-        return LLMTask(
-            "question_answer",
-            {
-                "context": "You are a helpful assistant that answers questions clearly and concisely.",
-                "prompt_template": "Please answer this question: ${user_question}",
-                "llm_provider": default_provider,
-                "llm_model": default_model,
-                "temperature": 0.7,
-                "max_tokens": 200,
-            },
-            [
-                TaskDependency(
-                    "user_question",
-                    "setup_context.user_inputs",
-                    DependencyType.REQUIRED,
-                )
-            ],
+        return llm(
+            prompt=f"Write a short story (2-3 paragraphs) about {topic}",
+            model=model,
+            provider=provider,
+            system="You are a creative writer who crafts engaging stories.",
+            temperature=0.9,
+            max_tokens=300,
         )
 
-    def _create_summarize_task(
-        self, default_provider: str, default_model: str
+    @task
+    def synthesis(
+        self,
+        question_answer: Annotated[str, Depends("question_answer.content")],
+        creative_writing: Annotated[str, Depends("creative_writing.content")],
     ) -> LLMTask:
-        """Create the content summarization task.
+        """Synthesize insights from the Q&A and creative writing tasks.
 
-        Args:
-            default_provider: Default LLM provider to use
-            default_model: Default LLM model to use
-
-        Returns:
-            Configured LLMTask for content summarization
+        This task demonstrates:
+        - Multiple dependencies using Annotated[T, Depends()]
+        - Combining results from earlier tasks
+        - Creating a synthesis from multiple sources
         """
-        return LLMTask(
-            "summarize_content",
-            {
-                "context": "You are an expert at summarizing content.",
-                "role": "content summarizer",
-                "prompt_template": "Please summarize the following text in 2-3 sentences: ${content_to_summarize}",
-                "llm_provider": default_provider,
-                "llm_model": default_model,
-                "temperature": 0.3,
-                "max_tokens": 150,
-            },
-            [
-                TaskDependency(
-                    "content_to_summarize",
-                    "setup_context.user_inputs",
-                    DependencyType.REQUIRED,
-                )
-            ],
-        )
+        provider = self.config.get("default_provider", "openai")
+        model = self.config.get("default_model", "gpt-4o-mini")
 
-    def _create_creative_writing_task(
-        self, default_provider: str, default_model: str
-    ) -> LLMTask:
-        """Create the creative writing task.
-
-        Args:
-            default_provider: Default LLM provider to use
-            default_model: Default LLM model to use
-
-        Returns:
-            Configured LLMTask for creative writing
-        """
-        return LLMTask(
-            "creative_writing",
-            {
-                "context": "You are a creative writer who crafts engaging stories.",
-                "role": "storyteller",
-                "prompt_template": "Write a short story (2-3 paragraphs) about ${story_topic}",
-                "llm_provider": default_provider,
-                "llm_model": default_model,
-                "temperature": 0.9,
-                "max_tokens": 300,
-            },
-            [
-                TaskDependency(
-                    "story_topic", "setup_context.user_inputs", DependencyType.REQUIRED
-                )
-            ],
-        )
-
-    def _create_data_analysis_task(
-        self, default_provider: str, default_model: str
-    ) -> LLMTask:
-        """Create the data analysis task.
-
-        Args:
-            default_provider: Default LLM provider to use
-            default_model: Default LLM model to use
-
-        Returns:
-            Configured LLMTask for data analysis
-        """
-        return LLMTask(
-            "analyze_data",
-            {
-                "context": "You are a data analyst who provides insights from data.",
-                "role": "data scientist",
-                "prompt_template": "Analyze the following data and provide 3 key insights: ${data_to_analyze}",
-                "llm_provider": self.config.get("analysis_provider", default_provider),
-                "llm_model": self.config.get("analysis_model", default_model),
-                "temperature": 0.2,
-                "max_tokens": 250,
-            },
-            [
-                TaskDependency(
-                    "data_to_analyze",
-                    "setup_context.user_inputs",
-                    DependencyType.REQUIRED,
-                )
-            ],
-        )
-
-    def _create_code_explanation_task(
-        self, default_provider: str, default_model: str
-    ) -> LLMTask:
-        """Create the code explanation task.
-
-        Args:
-            default_provider: Default LLM provider to use
-            default_model: Default LLM model to use
-
-        Returns:
-            Configured LLMTask for code explanation
-        """
-        return LLMTask(
-            "explain_code",
-            {
-                "context": "You are a programming instructor who explains code clearly.",
-                "role": "coding teacher",
-                "prompt_template": "Explain what this code does and how it works: ${code_to_explain}",
-                "llm_provider": default_provider,
-                "llm_model": default_model,
-                "temperature": 0.1,
-                "max_tokens": 200,
-            },
-            [
-                TaskDependency(
-                    "code_to_explain",
-                    "setup_context.user_inputs",
-                    DependencyType.REQUIRED,
-                )
-            ],
-        )
-
-    def _create_synthesis_task(
-        self, default_provider: str, default_model: str
-    ) -> LLMTask:
-        """Create the synthesis task that combines multiple results.
-
-        Args:
-            default_provider: Default LLM provider to use
-            default_model: Default LLM model to use
-
-        Returns:
-            Configured LLMTask for synthesizing multiple responses
-        """
-        return LLMTask(
-            "synthesis",
-            {
-                "context": "You are a synthesis expert who can combine different analyses into a coherent summary.",
-                "prompt_template": "Based on the Q&A response: '${qa_response}' and the creative story: '${story_content}', write a brief reflection on how AI creativity and analytical thinking complement each other.",
-                "llm_provider": default_provider,
-                "llm_model": default_model,
-                "temperature": 0.6,
-                "max_tokens": 200,
-            },
-            [
-                TaskDependency(
-                    "qa_response",
-                    "question_answer.content",
-                    DependencyType.REQUIRED,
-                ),
-                TaskDependency(
-                    "story_content",
-                    "creative_writing.content",
-                    DependencyType.REQUIRED,
-                ),
-            ],
+        return llm(
+            prompt=(
+                f"Based on the Q&A response: '{question_answer}' "
+                f"and the creative story: '{creative_writing}', "
+                "write a brief reflection on how AI creativity and "
+                "analytical thinking complement each other."
+            ),
+            model=model,
+            provider=provider,
+            system="You are a synthesis expert who can combine different analyses into a coherent summary.",
+            temperature=0.6,
+            max_tokens=200,
         )
 
     def get_summary(self) -> Dict[str, Any]:
         """Get a summary of all LLM task results."""
-        if not self.tasks:
-            return {"message": "No tasks have been set up"}
-
         completed_tasks = self.context.get_completed_tasks() if self.context else []
         failed_tasks = self.context.get_failed_tasks() if self.context else []
 
@@ -292,48 +113,33 @@ class LLMAgent(PipelineAgent):
             "completed_tasks": len(completed_tasks),
             "failed_tasks": len(failed_tasks),
             "task_results": [],
-            "total_cost": 0.0,
         }
 
-        for task in self.tasks:
-            if isinstance(task, LLMTask):
+        for task_name in completed_tasks:
+            result = self.context.get_result(task_name)
+            if result:
                 task_info = {
-                    "name": task.name,
-                    "status": task.get_status().value,
-                    "provider": task.config.get("llm_provider"),
-                    "model": task.config.get("llm_model"),
+                    "name": task_name,
+                    "content_length": len(result.get("content", "")),
+                    "usage": result.get("usage"),
                 }
-
-                if task.is_completed():
-                    result = task.get_result()
-                    if result is not None:
-                        task_info.update(
-                            {
-                                "content_length": len(result.get("content", "")),
-                                "token_usage": result.get("usage"),
-                            }
-                        )
-
-                elif task.has_error():
-                    task_info["error"] = task.get_error()
-
                 summary["task_results"].append(task_info)
 
         return summary
 
 
 def main() -> None:
-    """Demonstrate the modern LLM agent with pipeline architecture."""
+    """Demonstrate the modern LLM agent with declarative syntax."""
     print_header("MODERN LLM AGENT DEMONSTRATION")
 
     print_message_box(
-        "PIPELINE LLM ARCHITECTURE",
+        "DECLARATIVE LLM ARCHITECTURE",
         [
-            "This example shows the new pipeline LLM architecture where:",
-            "• LLM tasks use contextual templates with dependency injection",
-            "• Data flows between LLM tasks via automatic resolution",
-            "• Tasks can build upon results from previous LLM calls",
-            "• Framework handles all orchestration automatically",
+            "This example shows the declarative @task syntax where:",
+            "- LLM tasks use llm() helper for clean creation",
+            "- Dependencies inferred from parameter names",
+            "- Depends() extracts specific fields from task results",
+            "- Framework handles all orchestration automatically",
         ],
     )
 
@@ -341,16 +147,20 @@ def main() -> None:
         "modern_llm_agent",
         {
             "default_provider": "openai",
-            "default_model": "gpt-4.1-nano",
+            "default_model": "gpt-4o-mini",
             "question": "How will AI transform healthcare in the next decade?",
             "story_topic": "an AI doctor making a breakthrough discovery",
-            "content_to_summarize": "Recent advances in artificial intelligence have shown tremendous promise in healthcare applications. Machine learning algorithms can now analyze medical images with accuracy matching or exceeding human radiologists. Natural language processing helps extract insights from electronic health records. Predictive models identify patients at risk of complications. AI-powered drug discovery platforms accelerate the development of new treatments. However, challenges remain including data privacy, algorithmic bias, regulatory approval, and physician adoption.",
+            "content_to_summarize": (
+                "Recent advances in artificial intelligence have shown tremendous promise "
+                "in healthcare applications. Machine learning algorithms can now analyze "
+                "medical images with accuracy matching or exceeding human radiologists. "
+                "Natural language processing helps extract insights from electronic health records."
+            ),
             "enable_parallel": False,  # Sequential for clear demonstration
             "stop_on_failure": True,
         },
     )
 
-    agent.setup_tasks()
     agent.run()
     agent.display_results()
 
@@ -359,10 +169,10 @@ def main() -> None:
         "LLM PIPELINE DEMONSTRATION COMPLETE",
         [
             "The pipeline automatically:",
-            "✓ Resolved LLM task dependencies",
-            "✓ Applied contextual template substitution",
-            "✓ Passed LLM results between tasks",
-            "✓ Synthesized multiple AI responses",
+            "- Resolved LLM task dependencies",
+            "- Executed llm() tasks in order",
+            "- Passed LLM results between tasks",
+            "- Synthesized multiple AI responses",
         ],
     )
 

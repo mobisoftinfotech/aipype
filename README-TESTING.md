@@ -379,14 +379,7 @@ Common reasons:
 - Check rate limits
 - Ensure services (Ollama, MCP server) are running and accessible
 
-### Integration tests are slow
-
-- Integration tests can be slower than unit tests
-- Use `-m "not slow"` to exclude slow tests
-- Consider running integration tests less frequently
-
 ## Additional Resources
 
 - [Main README](README.md) - Project overview and setup
-- [CLAUDE.md](CLAUDE.md) - Coding standards and architecture
 - [API Documentation](https://mobisoftinfotech.com/tools/aipype/docs/)

@@ -50,10 +50,10 @@ from typing import Any, Dict, List, override
 
 from aipype import (
     BaseTask,
+    BasePipelineAgent,
     ConditionalTask,
     DependencyType,
     LLMTask,
-    PipelineAgent,
     TaskDependency,
     TaskResult,
     TransformTask,
@@ -208,7 +208,7 @@ class SaveFileTask(BaseTask):
             )
 
 
-class DocsGeneratorAgent(PipelineAgent):
+class DocsGeneratorAgent(BasePipelineAgent):
     """Agent that generates concise, example-focused LLM documentation."""
 
     @override

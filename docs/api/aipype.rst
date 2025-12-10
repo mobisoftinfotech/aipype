@@ -11,8 +11,53 @@ Core Components
    :undoc-members:
    :show-inheritance:
 
-Pipeline Agent
-==============
+Declarative Syntax (Recommended)
+================================
+
+The declarative syntax provides a clean, Pythonic way to define AI agent pipelines using ``@task`` decorators and helper functions.
+
+PipelineAgent (Declarative Syntax)
+----------------------------------
+
+.. automodule:: aipype.declarative_agent
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Decorators
+----------
+
+.. automodule:: aipype.decorators
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Helper Functions
+----------------
+
+.. automodule:: aipype.helpers
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Task Wrapper
+------------
+
+.. automodule:: aipype.task_wrapper
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Dependency Inference
+--------------------
+
+.. automodule:: aipype.dependency_inference
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+BasePipelineAgent (Legacy Syntax)
+=================================
 
 .. automodule:: aipype.pipeline_agent
    :members:
@@ -20,10 +65,10 @@ Pipeline Agent
    :show-inheritance:
 
 Task Types
-----------
+==========
 
 LLM Task
-^^^^^^^^
+--------
 
 .. automodule:: aipype.llm_task
    :members:
@@ -31,7 +76,7 @@ LLM Task
    :show-inheritance:
 
 Search Task
-^^^^^^^^^^^
+-----------
 
 .. automodule:: aipype.search_task
    :members:
@@ -39,7 +84,7 @@ Search Task
    :show-inheritance:
 
 Transform Task
-^^^^^^^^^^^^^^
+--------------
 
 .. automodule:: aipype.transform_task
    :members:
@@ -47,7 +92,7 @@ Transform Task
    :show-inheritance:
 
 Conditional Task
-^^^^^^^^^^^^^^^^
+----------------
 
 .. automodule:: aipype.conditional_task
    :members:
@@ -90,10 +135,10 @@ Task Dependencies
    :show-inheritance:
 
 Tools and Utilities
--------------------
+===================
 
 Tool Registry
-^^^^^^^^^^^^^
+-------------
 
 .. automodule:: aipype.tool_registry
    :members:
@@ -101,7 +146,7 @@ Tool Registry
    :show-inheritance:
 
 Tool Executor
-^^^^^^^^^^^^^
+-------------
 
 .. automodule:: aipype.tool_executor
    :members:
@@ -109,7 +154,7 @@ Tool Executor
    :show-inheritance:
 
 Tools
-^^^^^
+-----
 
 .. automodule:: aipype.tools
    :members:
@@ -117,7 +162,7 @@ Tools
    :show-inheritance:
 
 URL Fetcher
-^^^^^^^^^^^
+-----------
 
 .. autoclass:: aipype.utils.url_fetcher.URLFetcher
    :members:

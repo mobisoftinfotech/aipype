@@ -12,47 +12,42 @@ Usage examples:
 - Show only tasks: agent.display_results(["tasks"])
 """
 
-from typing import List, override
+from typing import Annotated, Any, Dict
 
 from aipype import (
     PipelineAgent,
-    BaseTask,
+    task,
+    llm,
+    search,
+    Depends,
     LLMTask,
     SearchTask,
-    TaskDependency,
-    DependencyType,
     print_header,
 )
 
 
 class SimpleDisplayDemo(PipelineAgent):
-    """Demo agent showing simple display_results usage."""
+    """Demo agent showing simple display_results usage with declarative syntax."""
 
-    @override
-    def setup_tasks(self) -> List[BaseTask]:
-        """Set up a simple pipeline for demonstration."""
-        return [
-            SearchTask(
-                "search_demo",
-                {"query": "Python programming tutorial", "max_results": 3},
-            ),
-            LLMTask(
-                "analyze_search",
-                {
-                    "context": "You are a content analyst.",
-                    "prompt_template": "Briefly analyze these search results: ${search_results}",
-                    "llm_provider": "openai",
-                    "llm_model": "gpt-4o-mini",
-                    "temperature": 0.3,
-                    "max_tokens": 200,
-                },
-                [
-                    TaskDependency(
-                        "search_results", "search_demo.results", DependencyType.REQUIRED
-                    )
-                ],
-            ),
-        ]
+    @task
+    def search_demo(self) -> SearchTask:
+        """Search for Python programming tutorials."""
+        return search("Python programming tutorial", max_results=3)
+
+    @task
+    def analyze_search(
+        self,
+        search_demo: Annotated[Dict[str, Any], Depends("search_demo.results")],
+    ) -> LLMTask:
+        """Analyze search results using LLM."""
+        return llm(
+            prompt=f"Briefly analyze these search results: {search_demo}",
+            model="gpt-4o-mini",
+            provider="openai",
+            system="You are a content analyst.",
+            temperature=0.3,
+            max_tokens=200,
+        )
 
 
 def demonstrate_display_options() -> None:

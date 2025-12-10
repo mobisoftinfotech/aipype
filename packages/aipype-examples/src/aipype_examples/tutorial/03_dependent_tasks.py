@@ -1,33 +1,30 @@
 """
-Dependent tasks tutorial: Outline → Article with LLMTask (Ollama Gemma3:4b)
---------------------------------------------------------------------------
+Dependent tasks tutorial: Outline -> Article with automatic dependency inference
+--------------------------------------------------------------------------------
 
-This tutorial shows how one task can depend on another using the framework's
-dependency system. We extend the outline example by adding a second LLM task
-that uses the outline to write a short article.
+This tutorial shows how one task can depend on another using the declarative
+@task syntax with automatic dependency inference. We extend the outline example
+by adding a second LLM task that uses the outline to write a short article.
 
 Key concepts demonstrated:
-- Two `LLMTask` instances orchestrated by a `PipelineAgent`
-- `TaskDependency` wires output of one task into the config of another
-- Prompt templating with `${variable}` placeholders
-- Displaying both intermediate (outline) and final (article) results
+- Automatic dependency inference from parameter names
+- Parameter names matching task names create dependencies
+- Annotated[T, Depends("task.field")] for explicit field extraction
+- Tasks execute in dependency order (topologically sorted)
+
+How dependency inference works:
+1. If a parameter name matches another @task method name, it becomes a dependency
+2. The parameter receives the full task result (dict) by default
+3. Use Depends("task.field") to extract specific fields from the result
 
 Environment configuration (API base):
 - Set `OLLAMA_API_BASE` to your Ollama server (default: http://localhost:11434)
-- The framework auto-loads `.env` via `dotenv` if present.
 """
 
 import os
+from typing import Annotated, Optional, List
 
-from typing import List, Optional
-from typing import override
-from aipype import (
-    PipelineAgent,
-    BaseTask,
-    LLMTask,
-    TaskDependency,
-    DependencyType,
-)
+from aipype import PipelineAgent, task, llm, Depends, LLMTask
 from aipype import print_header
 
 
@@ -35,92 +32,91 @@ DEFAULT_TOPIC = "AI agent frameworks"
 
 
 class OutlineToArticleAgent(PipelineAgent):
-    """Agent with two dependent LLM tasks: outline → article.
+    """Agent with two dependent LLM tasks: outline -> article.
 
-    - Task 1 (`outline_article`): Generates a markdown outline
-    - Task 2 (`write_article`): Consumes the outline result and writes an article
+    This demonstrates automatic dependency inference:
+    - Task 1 (outline_article): Generates a markdown outline (no dependencies)
+    - Task 2 (write_article): Depends on outline_article via parameter name
+
+    The framework automatically:
+    1. Discovers both @task methods
+    2. Infers that write_article depends on outline_article
+    3. Executes outline_article first, then write_article
     """
 
-    @override
-    def setup_tasks(self) -> List[BaseTask]:
+    @task
+    def outline_article(self) -> LLMTask:
+        """Generate an article outline.
+
+        This task has no parameters matching other task names,
+        so it has no dependencies and runs first.
+
+        Returns:
+            LLMTask: Configured outline generation task
+        """
         topic = self.config.get("topic", DEFAULT_TOPIC)
 
-        outline_task = self._create_outline_task(topic)
-        article_task = self._create_article_task()
-
-        return [outline_task, article_task]
-
-    def _create_outline_task(self, topic: str) -> LLMTask:
-        return LLMTask(
-            name="outline_article",
-            config={
-                "llm_provider": "ollama",
-                "llm_model": "gemma3:4b",
-                # Prompt templating: `${topic}` will be resolved from this config
-                "prompt_template": (
-                    "Create a concise, hierarchical outline for an article about ${topic}.\n"
-                    "- Use 5-7 top-level sections with clear headings.\n"
-                    "- Add 2-3 bullet points under each section.\n"
-                    "- Optimize for technical readers and clarity.\n"
-                    "Return the outline in markdown. output only the outline, no other text."
-                ),
-                "context": (
-                    "You are an expert technical editor who creates clear, useful article outlines."
-                ),
-                "role": "Senior tech editor",
-                "temperature": 0.2,
-                "max_tokens": 800,
-                # Template variables
-                "topic": topic,
-            },
+        return llm(
+            prompt=(
+                f"Create a concise, hierarchical outline for an article about {topic}.\n"
+                "- Use 5-7 top-level sections with clear headings.\n"
+                "- Add 2-3 bullet points under each section.\n"
+                "- Optimize for technical readers and clarity.\n"
+                "Return the outline in markdown. Output only the outline, no other text."
+            ),
+            model="gemma3:4b",
+            provider="ollama",
+            system="You are an expert technical editor who creates clear, useful article outlines.",
+            temperature=0.2,
+            max_tokens=800,
         )
 
-    def _create_article_task(self) -> LLMTask:
-        """Create an article-writing task that depends on the outline task output.
+    @task
+    def write_article(
+        self,
+        outline_article: Annotated[str, Depends("outline_article.content")],
+    ) -> LLMTask:
+        """Write an article based on the outline.
 
-        Dependency wiring:
-        - Declare a `TaskDependency` with target key `outline_content`
-        - Source path `outline_article.content` maps Task1's `content` into Task2 config
-        - In the prompt template, reference `${outline_content}`
+        This task demonstrates explicit field extraction with Depends():
+        - Parameter name: outline_article (matches the task name)
+        - Depends("outline_article.content") extracts just the .content field
+
+        The framework:
+        1. Detects outline_article parameter matches a task name
+        2. Sees Depends("outline_article.content") annotation
+        3. Extracts .content from the outline_article result
+        4. Passes it as the outline_article parameter
+
+        Args:
+            outline_article: The outline content (extracted via Depends)
+
+        Returns:
+            LLMTask: Configured article writing task
         """
-        return LLMTask(
-            name="write_article",
-            config={
-                "llm_provider": "ollama",
-                "llm_model": "gemma3:4b",
-                # Use outline from the first task
-                "prompt_template": (
-                    "Write a short, well-structured article based on the following outline.\n\n"
-                    "Outline (markdown):\n${outline_content}\n\n"
-                    "Requirements:\n"
-                    "- Professional, clear tone\n"
-                    "- 500-700 words\n"
-                    "- Preserve section structure\n"
-                    "- output only the article, no other text."
-                ),
-                "context": (
-                    "You are an expert technical writer who crafts concise, structured articles."
-                ),
-                "role": "Senior tech writer",
-                "temperature": 0.5,
-                "max_tokens": 1200,
-            },
-            dependencies=[
-                TaskDependency(
-                    name="outline_content",
-                    source_path="outline_article.content",
-                    dependency_type=DependencyType.REQUIRED,
-                )
-            ],
+        return llm(
+            prompt=(
+                "Write a short, well-structured article based on the following outline.\n\n"
+                f"Outline (markdown):\n{outline_article}\n\n"
+                "Requirements:\n"
+                "- Professional, clear tone\n"
+                "- 500-700 words\n"
+                "- Preserve section structure\n"
+                "- Output only the article, no other text."
+            ),
+            model="gemma3:4b",
+            provider="ollama",
+            system="You are an expert technical writer who crafts concise, structured articles.",
+            temperature=0.5,
+            max_tokens=1200,
         )
 
-    @override
-    def display_results(self, sections: Optional[List[str]] = None) -> None:
-        """Display results using the simple framework display method."""
+    def display_results(self, sections: Optional[List[str]] = None) -> None:  # type: ignore[override]
+        """Display results using the framework display methods."""
         # Use the framework's built-in display method for basic results
         super().display_results()
 
-        # Add custom detailed content display - ultra-clean with display_completed_results!
+        # Add custom detailed content display
         self.context.display_completed_results(
             [
                 ("outline_article", "GENERATED OUTLINE"),

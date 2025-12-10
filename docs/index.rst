@@ -11,6 +11,9 @@ aipype is a powerful Python framework for building AI workflows with automatic d
 Key Features
 ============
 
+* **Declarative Syntax**: Use ``@task`` decorators for clean, Pythonic agent definitions
+* **Automatic Dependencies**: Dependencies inferred from method parameter names
+* **Helper Functions**: ``llm()``, ``search()``, ``mcp_server()`` for intuitive task creation
 * **Pipeline System**: Declarative pipeline with automatic dependency resolution
 * **Task Context**: Shared data with path-based access ("search_results.data")
 * **Template Substitution**: ``${variable}`` syntax in task configurations
@@ -27,13 +30,63 @@ Install aipype:
 
    pip install aipype
 
-Create a simple pipeline:
+Declarative Syntax (Recommended)
+--------------------------------
+
+Create agents using the ``@task`` decorator for clean, Pythonic code:
 
 .. code-block:: python
 
-   from aipype import PipelineAgent, LLMTask, SearchTask, TaskDependency, DependencyType
+   from aipype import PipelineAgent, task, llm, search, Depends
+   from typing import Annotated
 
-   class ArticleWriterAgent(PipelineAgent):
+   class ResearchAgent(PipelineAgent):
+
+       @task
+       def find_sources(self) -> dict:
+           """Search for articles - no dependencies, runs first."""
+           return search(self.config["topic"], max_results=5)
+
+       @task
+       def analyze(self, find_sources: dict) -> str:
+           """Analyze sources - find_sources parameter auto-injected."""
+           return llm(
+               prompt=f"Analyze these sources: {find_sources}",
+               model="gpt-4o",
+               temperature=0.3
+           )
+
+       @task
+       def write_summary(
+           self,
+           content: Annotated[str, Depends("analyze.content")]
+       ) -> str:
+           """Use Depends() for explicit field extraction."""
+           return llm(f"Write a summary based on: {content}", model="gpt-4o")
+
+   # Usage
+   agent = ResearchAgent("research", {"topic": "AI trends"})
+   result = agent.run()
+   agent.display_results()
+
+Key Concepts:
+
+* ``@task`` decorator marks methods as pipeline tasks
+* Parameter names matching task names create automatic dependencies
+* ``Annotated[T, Depends("task.field")]`` extracts specific fields from task output
+* ``self.config`` provides access to agent configuration
+* Tasks with no dependencies run first (topologically sorted)
+
+Legacy Syntax
+-------------
+
+For backwards compatibility or complex scenarios:
+
+.. code-block:: python
+
+   from aipype import BasePipelineAgent, LLMTask, SearchTask, TaskDependency, DependencyType
+
+   class ArticleWriterAgent(BasePipelineAgent):
        def setup_tasks(self):
            return [
                SearchTask("search", {"query": "${topic}", "max_results": 5},

@@ -1,8 +1,8 @@
-"""Example demonstrating Model Context Protocol (MCP) integration with LLMTask.
+"""Example demonstrating Model Context Protocol (MCP) integration with @task and llm().
 
 This example shows how to:
 1. Use MCP servers as external tools with Claude (Anthropic)
-2. Mix Python tools with MCP servers
+2. Mix Python tools with MCP servers using mcp_server() helper
 3. Configure MCP tool restrictions with allowed_tools
 
 ## Why Claude + NGrok?
@@ -60,10 +60,8 @@ directory can be read, making it safe to expose over NGrok.
 
 import os
 import sys
-from typing import List, override
 
-from aipype import BaseTask, LLMTask, PipelineAgent
-from aipype.tools import tool
+from aipype import PipelineAgent, task, llm, mcp_server, tool, LLMTask
 
 
 # Example 1: Simple Python tool for comparison
@@ -103,9 +101,12 @@ class MCPOnlyAgent(PipelineAgent):
         Uses Claude with NGrok-exposed MCP server for internet accessibility.
     """
 
-    @override
-    def setup_tasks(self) -> List[BaseTask]:
-        # Get configuration values
+    @task
+    def analyze_file(self) -> LLMTask:
+        """Read and analyze a file using MCP server.
+
+        Demonstrates using mcp_server() helper for MCP tool configuration.
+        """
         filename = self.config.get("filename", "")
         topic = self.config.get("topic", "")
 
@@ -122,29 +123,17 @@ class MCPOnlyAgent(PipelineAgent):
                 "Set it to your MCP server endpoint (e.g., https://your-ngrok-url.ngrok-free.app/sse)"
             )
 
-        return [
-            LLMTask(
-                "analyze_file",
-                {
-                    "prompt": (
-                        "First, list the available files using list_files(). "
-                        f"Then read the file '{filename}' using read_file(). "
-                        f"After reading the file, analyze its contents and provide insights about {topic}."
-                    ),
-                    "tools": [
-                        {
-                            "type": "mcp",
-                            "server_label": "file_reader",
-                            "server_url": mcp_url,
-                            "require_approval": "never",
-                        }
-                    ],
-                    "llm_provider": "anthropic",
-                    "llm_model": "claude-sonnet-4-20250514",
-                    "max_tokens": 2000,
-                },
-            )
-        ]
+        return llm(
+            prompt=(
+                "First, list the available files using list_files(). "
+                f"Then read the file '{filename}' using read_file(). "
+                f"After reading the file, analyze its contents and provide insights about {topic}."
+            ),
+            model="claude-sonnet-4-20250514",
+            provider="anthropic",
+            tools=[mcp_server("file_reader", mcp_url, require_approval="never")],
+            max_tokens=2000,
+        )
 
 
 class MixedToolsAgent(PipelineAgent):
@@ -163,9 +152,12 @@ class MixedToolsAgent(PipelineAgent):
         Demonstrates mixing Python tools with MCP tools using Claude.
     """
 
-    @override
-    def setup_tasks(self) -> List[BaseTask]:
-        # Get configuration values
+    @task
+    def analyze_with_calculations(self) -> LLMTask:
+        """Analyze file content and perform calculations.
+
+        Demonstrates mixing Python @tool functions with MCP servers.
+        """
         filename = self.config.get("filename", "")
 
         if not filename:
@@ -179,34 +171,24 @@ class MixedToolsAgent(PipelineAgent):
                 "Set it to your MCP server endpoint (e.g., https://your-ngrok-url.ngrok-free.app/sse)"
             )
 
-        return [
-            LLMTask(
-                "analyze_with_calculations",
-                {
-                    "prompt": (
-                        f"Read the file '{filename}' using read_file(). "
-                        "Analyze the content and if you find any mathematical expressions or numbers, "
-                        "use the calculate() function to verify or compute results. "
-                        "Provide a comprehensive analysis with calculations."
-                    ),
-                    "tools": [
-                        # Python tool - executed locally
-                        calculate,
-                        # MCP server - executed remotely
-                        {
-                            "type": "mcp",
-                            "server_label": "file_reader",
-                            "server_url": mcp_url,
-                            "require_approval": "never",
-                        },
-                    ],
-                    "llm_provider": "anthropic",
-                    "llm_model": "claude-sonnet-4-20250514",
-                    "max_tokens": 3000,
-                    "temperature": 0.3,
-                },
-            )
-        ]
+        return llm(
+            prompt=(
+                f"Read the file '{filename}' using read_file(). "
+                "Analyze the content and if you find any mathematical expressions or numbers, "
+                "use the calculate() function to verify or compute results. "
+                "Provide a comprehensive analysis with calculations."
+            ),
+            model="claude-sonnet-4-20250514",
+            provider="anthropic",
+            tools=[
+                calculate,  # Python tool - executed locally
+                mcp_server(
+                    "file_reader", mcp_url, require_approval="never"
+                ),  # MCP server
+            ],
+            max_tokens=3000,
+            temperature=0.3,
+        )
 
 
 class RestrictedMCPToolsAgent(PipelineAgent):
@@ -228,9 +210,12 @@ class RestrictedMCPToolsAgent(PipelineAgent):
         MCP tools are available to the LLM.
     """
 
-    @override
-    def setup_tasks(self) -> List[BaseTask]:
-        # Get configuration values
+    @task
+    def analyze_multiple_files(self) -> LLMTask:
+        """Read and compare multiple files with restricted tools.
+
+        Demonstrates using allowed_tools to limit MCP server tools.
+        """
         file1 = self.config.get("file1", "")
         file2 = self.config.get("file2", "")
 
@@ -247,34 +232,25 @@ class RestrictedMCPToolsAgent(PipelineAgent):
                 "Set it to your MCP server endpoint (e.g., https://your-ngrok-url.ngrok-free.app/sse)"
             )
 
-        return [
-            LLMTask(
-                "analyze_multiple_files",
-                {
-                    "prompt": (
-                        "You have access to a file reader. "
-                        f"Read both '{file1}' and '{file2}' files. "
-                        "Compare and contrast the contents of both files. "
-                        "Note: list_files() is not available, only read_file()."
-                    ),
-                    "tools": [
-                        # MCP server with tool restrictions
-                        {
-                            "type": "mcp",
-                            "server_label": "file_reader_restricted",
-                            "server_url": mcp_url,
-                            "require_approval": "never",
-                            "allowed_tools": [
-                                "read_file"
-                            ],  # Only allow read_file, not list_files
-                        },
-                    ],
-                    "llm_provider": "anthropic",
-                    "llm_model": "claude-sonnet-4-20250514",
-                    "max_tokens": 4000,
-                },
-            )
-        ]
+        return llm(
+            prompt=(
+                "You have access to a file reader. "
+                f"Read both '{file1}' and '{file2}' files. "
+                "Compare and contrast the contents of both files. "
+                "Note: list_files() is not available, only read_file()."
+            ),
+            model="claude-sonnet-4-20250514",
+            provider="anthropic",
+            tools=[
+                mcp_server(
+                    "file_reader_restricted",
+                    mcp_url,
+                    require_approval="never",
+                    allowed_tools=["read_file"],  # Only allow read_file, not list_files
+                ),
+            ],
+            max_tokens=4000,
+        )
 
 
 def example_mcp_only() -> None:
@@ -291,11 +267,11 @@ def example_mcp_only() -> None:
 
     # Exit immediately if agent fails (like tests do)
     if not (result.is_success() or result.is_partial()):
-        print(f"\n✗ Analysis failed: {result.error_message}")
+        print(f"\nAnalysis failed: {result.error_message}")
         sys.exit(1)
 
     if result.is_success():
-        print("\n✓ File analysis completed successfully")
+        print("\nFile analysis completed successfully")
 
         # Get task result from context
         task_result = agent.context.get_result("analyze_file")
@@ -310,14 +286,14 @@ def example_mcp_only() -> None:
 
             # Show tool calls if available
             if "tool_calls" in task_result:
-                print("\n📊 MCP Tools used:")
+                print("\nMCP Tools used:")
                 for tool_call in task_result["tool_calls"]:
                     tool_name = tool_call.get("tool_name", "unknown")
                     success = tool_call.get("success", False)
-                    status = "✓" if success else "✗"
+                    status = "[OK]" if success else "[FAIL]"
                     print(f"  {status} {tool_name}")
         else:
-            print("\n⚠️  No task result found in context")
+            print("\nNo task result found in context")
 
 
 def example_mixed_tools() -> None:
@@ -331,11 +307,11 @@ def example_mixed_tools() -> None:
 
     # Exit immediately if agent fails (like tests do)
     if not (result.is_success() or result.is_partial()):
-        print(f"\n✗ Analysis failed: {result.error_message}")
+        print(f"\nAnalysis failed: {result.error_message}")
         sys.exit(1)
 
     if result.is_success():
-        print("\n✓ Analysis with calculations completed successfully")
+        print("\nAnalysis with calculations completed successfully")
 
         # Get task result from context
         task_result = agent.context.get_result("analyze_with_calculations")
@@ -350,15 +326,15 @@ def example_mixed_tools() -> None:
 
             # Check which tools were used
             if "tool_calls" in task_result:
-                print("\n📊 Tools used:")
+                print("\nTools used:")
                 for tool_call in task_result["tool_calls"]:
                     tool_name = tool_call.get("tool_name", "unknown")
                     success = tool_call.get("success", False)
-                    status = "✓" if success else "✗"
-                    tool_type = "🐍 Python" if tool_name == "calculate" else "🔌 MCP"
+                    status = "[OK]" if success else "[FAIL]"
+                    tool_type = "Python" if tool_name == "calculate" else "MCP"
                     print(f"  {status} {tool_type}: {tool_name}")
         else:
-            print("\n⚠️  No task result found in context")
+            print("\nNo task result found in context")
 
 
 def example_restricted_mcp_tools() -> None:
@@ -375,11 +351,11 @@ def example_restricted_mcp_tools() -> None:
 
     # Exit immediately if agent fails (like tests do)
     if not (result.is_success() or result.is_partial()):
-        print(f"\n✗ Comparison failed: {result.error_message}")
+        print(f"\nComparison failed: {result.error_message}")
         sys.exit(1)
 
     if result.is_success():
-        print("\n✓ Multi-file comparison completed successfully")
+        print("\nMulti-file comparison completed successfully")
 
         # Get task result from context
         task_result = agent.context.get_result("analyze_multiple_files")
@@ -394,29 +370,29 @@ def example_restricted_mcp_tools() -> None:
 
             # Show different MCP configurations used
             if "tool_calls" in task_result:
-                print("\n📊 MCP Tools used (with restrictions):")
+                print("\nMCP Tools used (with restrictions):")
                 for tool_call in task_result["tool_calls"]:
                     tool_name = tool_call.get("tool_name", "unknown")
                     success = tool_call.get("success", False)
-                    status = "✓" if success else "✗"
+                    status = "[OK]" if success else "[FAIL]"
                     print(f"  {status} {tool_name}")
         else:
-            print("\n⚠️  No task result found in context")
+            print("\nNo task result found in context")
 
 
 def main() -> None:
     """Run all MCP integration examples."""
-    print("\n🚀 MCP Integration Examples")
+    print("\nMCP Integration Examples")
     print("=" * 80)
     print("These examples demonstrate how to integrate Model Context Protocol servers")
     print(
-        "with aipype's LLMTask using Claude (Anthropic) with NGrok-exposed MCP servers."
+        "with aipype's @task syntax using Claude (Anthropic) with NGrok-exposed MCP servers."
     )
-    print("\n⚠️  Prerequisites:")
+    print("\nPrerequisites:")
     print("  1. ANTHROPIC_API_KEY environment variable set")
     print("  2. FILE_READER_MCP_URL environment variable set (NGrok URL)")
     print("  3. MCP server running and accessible via NGrok tunnel")
-    print("\n💡 Setup Instructions:")
+    print("\nSetup Instructions:")
     print("  Terminal 1 - Start MCP server:")
     print(
         "     python packages/aipype-examples/src/aipype_examples/mcp_servers/file_reader_server.py"
@@ -438,11 +414,11 @@ def main() -> None:
         example_restricted_mcp_tools()
 
         print("\n" + "=" * 80)
-        print("✓ All examples completed!")
+        print("All examples completed!")
         print("=" * 80)
 
     except Exception as e:
-        print(f"\n✗ Error running examples: {str(e)}")
+        print(f"\nError running examples: {str(e)}")
         print("\nTroubleshooting:")
         print("  1. Is the FILE_READER_MCP_URL environment variable set?")
         print("  2. Is the ANTHROPIC_API_KEY environment variable set?")

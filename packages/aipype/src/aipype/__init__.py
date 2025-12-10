@@ -1,10 +1,14 @@
 """aipype: A modular AI agent framework with declarative pipeline-based task orchestration."""
 
-__version__ = "0.1.0a3"
+__version__ = "0.2.0a1"
 
 # Core framework exports
-from .pipeline_agent import PipelineAgent, TaskExecutionPlan
+from .pipeline_agent import BasePipelineAgent, TaskExecutionPlan
+from .declarative_agent import PipelineAgent
 from .base_task import BaseTask
+from .decorators import task, Depends
+from .task_wrapper import TaskWrapper
+from .helpers import llm, search, mcp_server, transform
 from .task_result import (
     TaskResult,
     TaskStatus,
@@ -82,9 +86,17 @@ from .utils.display import print_header, print_message_box
 
 __all__ = [
     # Core framework
-    "PipelineAgent",
+    "PipelineAgent",  # Primary agent class (declarative @task syntax)
+    "BasePipelineAgent",  # Base class for custom agents using setup_tasks()
     "TaskExecutionPlan",
     "BaseTask",
+    "task",
+    "Depends",
+    "TaskWrapper",
+    "llm",
+    "search",
+    "mcp_server",
+    "transform",
     "TaskResult",
     "TaskStatus",
     "wrap_legacy_result",

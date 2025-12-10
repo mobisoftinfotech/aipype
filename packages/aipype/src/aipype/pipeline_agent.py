@@ -1,6 +1,6 @@
 """Pipeline-based AI agent framework with automatic task orchestration.
 
-This module provides PipelineAgent, the core component for building AI workflows with
+This module provides BasePipelineAgent, the core component for building AI workflows with
 automatic dependency resolution and parallel execution. Tasks are organized into
 execution phases based on their dependencies, enabling optimal performance and
 data flow between tasks.
@@ -16,7 +16,7 @@ Key Concepts:
 
 .. code-block:: python
 
-    class ArticleWriterAgent(PipelineAgent):
+    class ArticleWriterAgent(BasePipelineAgent):
         def setup_tasks(self):
             return [
                 SearchTask("search", {"query": "AI trends", "max_results": 5}),
@@ -142,7 +142,7 @@ class TaskExecutionPlan:
                         dependencies.add(dep_task_name)
                     elif dep.is_required():
                         raise ValueError(
-                            f"PipelineAgent dependency resolution failed: Cannot satisfy dependency: task '{dep_task_name}' not found for task '{task_name}'"
+                            f"BasePipelineAgent dependency resolution failed: Cannot satisfy dependency: task '{dep_task_name}' not found for task '{task_name}'"
                         )
 
             dependency_graph[task_name] = dependencies
@@ -184,7 +184,7 @@ class TaskExecutionPlan:
             if task_name not in visited:
                 if has_cycle(task_name):
                     raise ValueError(
-                        f"PipelineAgent dependency validation failed: Circular dependency detected involving task '{task_name}'"
+                        f"BasePipelineAgent dependency validation failed: Circular dependency detected involving task '{task_name}'"
                     )
 
     def _organize_into_phases(
@@ -209,7 +209,7 @@ class TaskExecutionPlan:
             if not ready_tasks:
                 # Should not happen if circular dependency check passed
                 raise ValueError(
-                    "PipelineAgent task organization failed: Unable to resolve task dependencies - possible circular dependency"
+                    "BasePipelineAgent task organization failed: Unable to resolve task dependencies - possible circular dependency"
                 )
 
             # Add ready tasks as a new phase
@@ -249,10 +249,10 @@ class TaskExecutionPlan:
         return sum(len(phase) for phase in self.phases)
 
 
-class PipelineAgent:
-    """Main agent class for building AI workflows with automatic task orchestration.
+class BasePipelineAgent:
+    """Base agent class for building AI workflows with automatic task orchestration.
 
-    PipelineAgent is the primary interface for creating AI automation workflows.
+    BasePipelineAgent provides the foundation for creating AI automation workflows.
     It automatically handles task dependency resolution, parallel execution,
     error handling, and result collection. Users inherit from this class and
     implement setup_tasks() to define their workflow.
@@ -281,7 +281,7 @@ class PipelineAgent:
 
     .. code-block:: python
 
-        class DataProcessorAgent(PipelineAgent):
+        class DataProcessorAgent(BasePipelineAgent):
             def setup_tasks(self):
                 return [
                     SearchTask("gather_data", {
@@ -687,12 +687,12 @@ class PipelineAgent:
             AgentRunResult
         """
         if self._is_running:
-            self.logger.warning(f"PipelineAgent '{self.name}' is already running")
+            self.logger.warning(f"BasePipelineAgent '{self.name}' is already running")
             return AgentRunResult.running(self.name)
 
         self._is_running = True
         self.logger.info(
-            f"Starting PipelineAgent '{self.name}' with {len(self.tasks)} tasks"
+            f"Starting BasePipelineAgent '{self.name}' with {len(self.tasks)} tasks"
         )
 
         try:
@@ -1022,7 +1022,7 @@ class PipelineAgent:
 
         except Exception as e:
             # Handle unexpected exceptions during task execution setup
-            error_msg = f"PipelineAgent task execution failed: Task '{task.name}' failed during execution setup: {str(e)}"
+            error_msg = f"BasePipelineAgent task execution failed: Task '{task.name}' failed during execution setup: {str(e)}"
 
             # Mark task as failed
             task.mark_error(error_msg)
@@ -1084,7 +1084,7 @@ class PipelineAgent:
         """Reset the agent and clear context."""
         self.context.clear()
         self.execution_plan = None
-        self.logger.info(f"PipelineAgent '{self.name}' reset")
+        self.logger.info(f"BasePipelineAgent '{self.name}' reset")
 
     def display_results(self, sections: Optional[List[str]] = None) -> None:
         """Display results with configurable sections.
@@ -1262,6 +1262,6 @@ class PipelineAgent:
         phases = self.execution_plan.total_phases() if self.execution_plan else 0
 
         return (
-            f"PipelineAgent(name='{self.name}', tasks={len(self.tasks)}, "
+            f"BasePipelineAgent(name='{self.name}', tasks={len(self.tasks)}, "
             f"completed={completed}, failed={failed}, phases={phases})"
         )

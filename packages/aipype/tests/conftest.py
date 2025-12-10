@@ -8,7 +8,7 @@ from unittest.mock import Mock, patch
 from typing import override
 from aipype import (
     BaseTask,
-    PipelineAgent,
+    BasePipelineAgent,
     TaskResult,
     TaskContext,
     DependencyResolver,
@@ -48,7 +48,7 @@ class SlowTask(BaseTask):
         return TaskResult.success(f"slept for {delay}s")
 
 
-class MockAgent(PipelineAgent):
+class MockAgent(BasePipelineAgent):
     """Test agent with configurable tasks using modern pipeline architecture."""
 
     def __init__(
@@ -323,15 +323,15 @@ class SuccessCriteriaValidator:
     """Helper class to validate success criteria for the refactoring."""
 
     @staticmethod
-    def validate_no_custom_run_methods(agent_class: type[PipelineAgent]) -> bool:
+    def validate_no_custom_run_methods(agent_class: type[BasePipelineAgent]) -> bool:
         """Validate that agent doesn't have custom run() orchestration."""
         if hasattr(agent_class, "run"):
-            # If run() exists, it should be inherited from PipelineAgent
-            return agent_class.run is PipelineAgent.run
+            # If run() exists, it should be inherited from BasePipelineAgent
+            return agent_class.run is BasePipelineAgent.run
         return True
 
     @staticmethod
-    def validate_declarative_setup(agent: PipelineAgent) -> bool:
+    def validate_declarative_setup(agent: BasePipelineAgent) -> bool:
         """Validate that agent setup is declarative."""
         tasks = agent.setup_tasks()
 
@@ -357,7 +357,7 @@ class SuccessCriteriaValidator:
         return True
 
     @staticmethod
-    def validate_context_driven_data_flow(agent: PipelineAgent) -> bool:
+    def validate_context_driven_data_flow(agent: BasePipelineAgent) -> bool:
         """Validate that data flows through context, not direct coupling."""
         tasks = agent.setup_tasks()
 

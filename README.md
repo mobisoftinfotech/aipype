@@ -20,86 +20,89 @@ This is a new project. So if you find the project useful, please give it a star 
 
 ## Examples
 
-Here is a basic example of an agent which uses an LLM Task.
+### Declarative Syntax (Recommended)
+
+The recommended way to build agents in `aipype` is using the `@task` decorator for clean, Pythonic code:
 
 ```python
-import os
+from aipype import PipelineAgent, task, llm, search, Depends
+from typing import Annotated
 
-from typing import List, Optional
-from typing import override
-from aipype import PipelineAgent, BaseTask, LLMTask
-from aipype import print_header
+class ResearchAgent(PipelineAgent):
+    """Agent that searches for articles and generates a summary."""
 
+    @task
+    def find_sources(self) -> dict:
+        """Search for relevant articles."""
+        return search(self.config["topic"], max_results=5)
 
-DEFAULT_TOPIC = "AI agent frameworks"
-
-class OutlineAgent(PipelineAgent):
-    """Agent that orchestrates a single `LLMTask` to create an article outline.
-
-    - The agent reads `topic` from its `config` and passes it to the task.
-    - The task uses a `prompt_template` with `${topic}` placeholder.
-    - Provider is `ollama` and model is `gemma3:4b` for local inference.
-    """
-
-    @override
-    def setup_tasks(self) -> List[BaseTask]:
-        topic = self.config.get("topic", DEFAULT_TOPIC)
-
-        return [self._create_outline_task(topic)]
-
-    def _create_outline_task(self, topic: str) -> LLMTask:
-        return LLMTask(
-            name="outline_article",
-            config={
-                # Required provider + model for LLMTask
-                "llm_provider": "ollama",
-                "llm_model": "gemma3:4b",
-                # API base is read from env var OLLAMA_API_BASE (see header notes)
-                # Prompt templating: `${topic}` will be resolved from this config
-                "prompt_template": (
-                    "Create a concise, hierarchical outline for an article about ${topic}.\n"
-                    "- Use 5-7 top-level sections with clear headings.\n"
-                    "- Add 2-3 bullet points under each section.\n"
-                    "- Optimize for technical readers and clarity.\n"
-                    "Return the outline in markdown. Return only the outline, "
-                    "no other text."
-                ),
-                # Optional steering signals
-                "context": (
-                    "You are an expert technical editor who creates clear, useful article outlines."
-                ),
-                "role": "Senior tech editor",
-                # Sampling and length
-                "temperature": 0.2,
-                "max_tokens": 800,
-                # Template variables
-                "topic": topic,
-            },
+    @task
+    def analyze(self, find_sources: dict) -> str:
+        """Analyze sources - dependency auto-inferred from parameter name."""
+        return llm(
+            prompt=f"Analyze these sources: {find_sources}",
+            model="gpt-4o",
+            temperature=0.3
         )
 
-    @override
-    def display_results(self, sections: Optional[List[str]] = None) -> None:
-        """Display formatted outline after pipeline execution using framework utilities."""
-        # Use the framework's built-in display method for basic results
-        super().display_results()
-
-        # Add custom content display using framework utilities - true one-liner!
-        self.context.display_result_content(
-            "outline_article", "GENERATED OUTLINE (MARKDOWN)"
-        )
+    @task
+    def write_summary(
+        self,
+        content: Annotated[str, Depends("analyze.content")]
+    ) -> str:
+        """Write summary - uses Depends() for explicit field extraction."""
+        return llm(f"Write a summary based on: {content}", model="gpt-4o")
 
 
 if __name__ == "__main__":
-    print_header("LLM TASK TUTORIAL - OUTLINE GENERATION")
-
-    # Pick a topic; you can also pass this via CLI args or env in real usage
-    topic = os.getenv("OUTLINE_TOPIC", DEFAULT_TOPIC)
-
-    # Instantiate, run, and display results like the example agent does
-    agent = OutlineAgent(name="outline-agent", config={"topic": topic})
+    agent = ResearchAgent("research", {"topic": "AI agent frameworks"})
     agent.run()
     agent.display_results()
+```
 
+**Key Features:**
+- `@task` decorator marks methods as pipeline tasks
+- Dependencies are automatically inferred from parameter names
+- `Annotated[T, Depends("task.field")]` for explicit field extraction
+- `self.config` provides access to agent configuration
+- Tasks with no dependencies run first (topologically sorted)
+
+### Legacy Syntax (setup_tasks)
+
+For backwards compatibility or complex scenarios, you can use the explicit task setup:
+
+```python
+from typing import List
+from aipype import BasePipelineAgent, BaseTask, LLMTask
+
+
+class OutlineAgent(BasePipelineAgent):
+    """Agent that creates an article outline using legacy syntax."""
+
+    def setup_tasks(self) -> List[BaseTask]:
+        topic = self.config.get("topic", "AI agent frameworks")
+
+        return [
+            LLMTask(
+                name="outline_article",
+                config={
+                    "llm_provider": "ollama",
+                    "llm_model": "gemma3:4b",
+                    "prompt_template": (
+                        "Create a concise outline for an article about ${topic}."
+                    ),
+                    "temperature": 0.2,
+                    "max_tokens": 800,
+                    "topic": topic,
+                },
+            )
+        ]
+
+
+if __name__ == "__main__":
+    agent = OutlineAgent(name="outline-agent", config={"topic": "AI trends"})
+    agent.run()
+    agent.display_results()
 ```
 
 For more details, check the following:
