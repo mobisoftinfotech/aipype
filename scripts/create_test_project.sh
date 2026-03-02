@@ -139,18 +139,18 @@ def test_import(module_name: str, from_items: list[str] | None = None) -> bool:
             module = __import__(module_name, fromlist=from_items)
             for item in from_items:
                 if not hasattr(module, item):
-                    print(f"✗ {item} not found in {module_name}")
+                    print(f"  x {item} not found in {module_name}")
                     return False
-            print(f"✓ from {module_name} import {', '.join(from_items)}")
+            print(f"  + from {module_name} import {', '.join(from_items)}")
         else:
             __import__(module_name)
-            print(f"✓ import {module_name}")
+            print(f"  + import {module_name}")
         return True
     except ImportError as e:
         if from_items:
-            print(f"✗ Failed to import from {module_name}: {e}")
+            print(f"  x Failed to import from {module_name}: {e}")
         else:
-            print(f"✗ Failed to import {module_name}: {e}")
+            print(f"  x Failed to import {module_name}: {e}")
         return False
 
 def main() -> int:
@@ -161,30 +161,42 @@ def main() -> int:
     results = []
 
     # Test aipype core package
-    print("\n📦 Testing aipype core package:")
+    print("\n[aipype] Testing core package:")
     results.append(test_import("aipype"))
     results.append(test_import("aipype", [
-        "PipelineAgent", "BaseTask", "TaskResult", "TaskContext",
-        "TaskDependency", "DependencyType", "LLMTask", "SearchTask",
-        "ConditionalTask", "TransformTask"
+        "PipelineAgent", "BasePipelineAgent", "BaseTask", "TaskResult",
+        "TaskContext", "TaskDependency", "DependencyType", "LLMTask",
+        "SearchTask", "ConditionalTask", "TransformTask"
+    ]))
+
+    # Test declarative syntax (new in 0.2.0)
+    print("\n[aipype] Testing declarative syntax (new in 0.2.0):")
+    results.append(test_import("aipype", [
+        "task", "Depends", "llm", "search", "mcp_server", "transform"
+    ]))
+
+    # Test tool system
+    print("\n[aipype] Testing tool system:")
+    results.append(test_import("aipype", [
+        "tool", "ToolMetadata", "ToolRegistry", "ToolExecutor"
     ]))
 
     # Test aipype tasklib
-    print("\n📦 Testing aipype tasklib:")
+    print("\n[aipype] Testing tasklib:")
     results.append(test_import("aipype", [
         "BatchArticleSummarizeTask", "FileSaveTask", "URLFetchTask",
         "ExtractAudioFromVideoTask", "AudioTranscriptTask"
     ]))
 
     # Test aipype utils
-    print("\n📦 Testing aipype utils:")
+    print("\n[aipype] Testing utils:")
     results.append(test_import("aipype", [
         "setup_logger", "SearchResult", "SerperSearcher",
         "fetch_main_text", "URLFetcher"
     ]))
 
     # Test aipype-extras
-    print("\n📦 Testing aipype-extras package:")
+    print("\n[aipype-extras] Testing package:")
     results.append(test_import("aipype_extras"))
     results.append(test_import("aipype_extras.llm_log_viewer"))
     results.append(test_import("aipype_extras", [
@@ -192,7 +204,7 @@ def main() -> int:
     ]))
 
     # Test aipype-g
-    print("\n📦 Testing aipype-g package:")
+    print("\n[aipype-g] Testing package:")
     results.append(test_import("aipype_g"))
     results.append(test_import("aipype_g", [
         "GoogleOAuthTask", "GmailListEmailsTask", "GmailReadEmailTask",
@@ -208,12 +220,12 @@ def main() -> int:
     print("\n" + "=" * 60)
     passed = sum(results)
     total = len(results)
-    print(f"\n📊 Results: {passed}/{total} tests passed")
+    print(f"\nResults: {passed}/{total} tests passed")
 
     if all(results):
-        print("✅ All imports successful! Packages are correctly installed.")
+        print("[OK] All imports successful! Packages are correctly installed.")
     else:
-        print("❌ Some imports failed. Please check the output above.")
+        print("[FAIL] Some imports failed. Please check the output above.")
 
     return 0 if all(results) else 1
 
@@ -238,16 +250,32 @@ EOF
 fi
 
 echo ""
-echo -e "${GREEN}🎉 Test project created successfully!${NC}"
+echo -e "${GREEN}Test project created successfully!${NC}"
 echo ""
-echo -e "${BLUE}📂 Project location: ${YELLOW}$TARGET_DIR${NC}"
-echo -e "${BLUE}📝 Next steps:${NC}"
+echo -e "${BLUE}Project location: ${YELLOW}$TARGET_DIR${NC}"
+echo -e "${BLUE}Next steps:${NC}"
 echo "  1. cd $TARGET_DIR"
 echo "  2. Edit hello.py to test aipype functionality"
 echo "  3. Run: uv run python hello.py"
 echo ""
-echo -e "${BLUE}💡 Quick test example:${NC}"
-echo "  # Edit hello.py and add:"
-echo "  from aipype import TaskResult"
-echo "  print(TaskResult.success({'message': 'Hello from aipype!'}))"
+echo -e "${BLUE}Quick test example (declarative syntax):${NC}"
+cat << 'EXAMPLE'
+  # Edit hello.py and add:
+  from aipype import PipelineAgent, task, TaskResult
+
+  class HelloAgent(PipelineAgent):
+      @task
+      def greet(self) -> dict:
+          name = self.config.get("name", "World")
+          return {"message": f"Hello, {name}!"}
+
+      @task
+      def format_output(self, greet: dict) -> str:
+          return f"Agent says: {greet['message']}"
+
+  agent = HelloAgent("hello", {"name": "aipype"})
+  result = agent.run()
+  print(result)
+  agent.display_results()
+EXAMPLE
 echo ""

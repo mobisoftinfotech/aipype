@@ -76,6 +76,51 @@ function selectLog(log, index, element) {
     updateContentPanel(log);
 }
 
+function formatJsonWithExpandedStrings(obj, indent = 0) {
+    const spaces = '  '.repeat(indent);
+    const childSpaces = '  '.repeat(indent + 1);
+
+    if (obj === null) return 'null';
+    if (obj === undefined) return 'undefined';
+
+    if (typeof obj === 'string') {
+        // Check for actual newlines OR escaped \n sequences
+        if (obj.includes('\n') || obj.includes('\\n')) {
+            // Unescape literal \n to actual newlines, then format
+            const unescaped = obj.replace(/\\n/g, '\n');
+            const indentedLines = unescaped.split('\n').map(line => childSpaces + line).join('\n');
+            return '\n' + indentedLines;
+        }
+        return JSON.stringify(obj);
+    }
+
+    if (typeof obj === 'number' || typeof obj === 'boolean') {
+        return String(obj);
+    }
+
+    if (Array.isArray(obj)) {
+        if (obj.length === 0) return '[]';
+        const items = obj.map(item => childSpaces + formatJsonWithExpandedStrings(item, indent + 1));
+        return '[\n' + items.join(',\n') + '\n' + spaces + ']';
+    }
+
+    if (typeof obj === 'object') {
+        const keys = Object.keys(obj);
+        if (keys.length === 0) return '{}';
+        const entries = keys.map(key => {
+            const value = formatJsonWithExpandedStrings(obj[key], indent + 1);
+            // If value starts with newline (expanded string), put it directly after colon
+            if (value.startsWith('\n')) {
+                return childSpaces + JSON.stringify(key) + ':' + value;
+            }
+            return childSpaces + JSON.stringify(key) + ': ' + value;
+        });
+        return '{\n' + entries.join(',\n') + '\n' + spaces + '}';
+    }
+
+    return String(obj);
+}
+
 function updateContentPanel(log) {
     const panelTitle = document.getElementById('panel-title');
     const panelSubtitle = document.getElementById('panel-subtitle');
@@ -85,23 +130,11 @@ function updateContentPanel(log) {
     panelTitle.textContent = titleText;
     panelSubtitle.textContent = `${log.provider} • ${log.model} • ${new Date(log.timestamp).toLocaleString()}`;
     
-    // Format input prompt
-    let promptText = '';
-    if (log.input.prompt) {
-        promptText = log.input.prompt;
-    } else if (log.input.context && log.input.prompt_template) {
-        promptText = `Context: ${log.input.context}\n\nPrompt Template: ${log.input.prompt_template}`;
-    } else {
-        promptText = JSON.stringify(log.input, null, 2);
-    }
-    
-    // Format output
-    let outputText = '';
-    if (log.output.content) {
-        outputText = log.output.content;
-    } else {
-        outputText = JSON.stringify(log.output, null, 2);
-    }
+    // Format input - generic JSON with expanded multiline strings
+    const promptText = formatJsonWithExpandedStrings(log.input);
+
+    // Format output - generic JSON with expanded multiline strings
+    let outputText = formatJsonWithExpandedStrings(log.output);
     
     // Add usage information if available
     if (log.output.usage) {
